@@ -26,7 +26,7 @@
 <body>
 
 <!-- SETUP -->
-<div id="screen-setup" class="screen active">
+<div id="screen-setup" class="screen">
   <h2>⚙️ Configurazione Locali</h2>
   <div id="setup-container"></div>
   <button class="btn-outline" onclick="addSetupItem()">+ Aggiungi Apparecchio</button>
@@ -34,7 +34,7 @@
 </div>
 
 <!-- MAIN -->
-<div id="screen-main" class="screen">
+<div id="screen-main" class="screen active">
   <h2>📝 Registro HACCP</h2>
   <div class="area-selector">
     <button id="btn-CUCINA" class="area-btn active" onclick="setArea('CUCINA')">🍳 CUCINA</button>
@@ -42,14 +42,18 @@
     <button id="btn-RISTORANTE" class="area-btn" onclick="setArea('RISTORANTE')">🍽️ RISTO</button>
   </div>
   <div id="input-container"></div>
-  <button class="btn-outline" onclick="showScreen('screen-history'); loadCloudData()">📜 Storico Cloud</button>
+  
+  <div style="margin-top: 20px;">
+    <button class="btn-outline" onclick="showSetupScreen()">⚙️ Modifica Lista Apparecchi</button>
+    <button class="btn-primary" onclick="showScreen('screen-history'); loadCloudData()" style="margin-top: 10px;">📜 Storico Cloud</button>
+  </div>
 </div>
 
 <!-- HISTORY -->
 <div id="screen-history" class="screen">
   <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
     <h2>☁️ Storico</h2>
-    <button onclick="showScreen('screen-main')" style="width:auto; padding:5px 10px;">⬅️</button>
+    <button onclick="showScreen('screen-main')" style="width:auto; padding:5px 10px;">⬅️ Indietro</button>
   </div>
   <select id="filter-area" onchange="renderHistoryTable()">
     <option value="ALL">Tutti i locali</option>
@@ -66,7 +70,7 @@
 </div>
 
 <script>
-  // URL DEL TUO SCRIPT GOOGLE
+  // LA TUA STRINGA CLOUD PERSONALE
   const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZsu2-x5UrResgnArJvE60zwhhtezUoRoG64cphvxPGWukuvOxdvDQguTrrKpYhGSH/exec";
   
   let config = JSON.parse(localStorage.getItem('haccp_config')) || [];
@@ -74,8 +78,12 @@
   let cloudData = [];
 
   function init() {
-    if (config.length > 0) { showScreen('screen-main'); renderMain(); }
-    else { addSetupItem(); }
+    if (config.length > 0) { 
+      showScreen('screen-main'); 
+      renderMain(); 
+    } else { 
+      showSetupScreen(); 
+    }
   }
 
   function setArea(area) {
@@ -83,6 +91,17 @@
     document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-' + area).classList.add('active');
     renderMain();
+  }
+
+  // Funzione per mostrare la schermata di configurazione con i dati salvati
+  function showSetupScreen() {
+    document.getElementById('setup-container').innerHTML = '';
+    if (config.length === 0) {
+      addSetupItem(); // Aggiunge uno vuoto se non c'è nulla
+    } else {
+      config.forEach(c => addSetupItem(c.name, c.type, c.area));
+    }
+    showScreen('screen-setup');
   }
 
   function addSetupItem(name="", type="frigo", area="CUCINA") {
@@ -112,7 +131,8 @@
       if(n.value.trim() !== "") config.push({ name: n.value.trim(), type: types[i].value, area: areas[i].value }); 
     });
     localStorage.setItem('haccp_config', JSON.stringify(config));
-    showScreen('screen-main'); renderMain();
+    showScreen('screen-main'); 
+    renderMain();
   }
 
   function renderMain() {
@@ -121,7 +141,7 @@
     const filteredConfig = config.filter(c => c.area === currentArea);
     
     if(filteredConfig.length === 0) {
-      container.innerHTML = `<p style="text-align:center; padding:20px;">Nessun frigo in ${currentArea}.<br>Vai in configurazione.</p>`;
+      container.innerHTML = `<p style="text-align:center; padding:20px;">Nessun frigo in ${currentArea}.<br>Clicca "Modifica Lista" per aggiungerli.</p>`;
       return;
     }
 
