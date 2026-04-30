@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Registro HACCP con Filtri</title>
+<title>HACCP Cloud Professionale</title>
+<!-- Libreria per Excel con autoadattamento -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -17,66 +17,68 @@
   .screen { display: none; padding: 10px; }
   .screen.active { display: block; }
   .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-  
+  h2 { margin-bottom: 15px; color: var(--navy); }
   input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; margin-bottom: 10px; }
-  button { width: 100%; padding: 14px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+  button { width: 100%; padding: 14px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+  .btn-primary { background: var(--navy); color: white; margin-top: 10px; }
+  .btn-outline { background: white; color: var(--navy); border: 2px solid var(--navy); margin-top: 10px; }
+  .btn-ghost { background: #e2e8f0; color: #4a5568; font-size: 13px; width: auto; padding: 8px 15px; }
   
-  .btn-primary { background: var(--navy); color: white; }
-  .btn-outline { background: white; color: var(--navy); border: 2px solid var(--navy); }
-  .btn-ghost { background: #eee; color: #333; font-size: 13px; }
-
+  /* Stile Tabella Storico */
   .history-table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; }
   .history-table th, .history-table td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
-  .history-table th { background: var(--navy); color: white; }
+  .history-table th { background: var(--navy); color: white; position: sticky; top: 0; }
   .status-ok { color: var(--green); font-weight: bold; }
   .status-err { color: var(--red); font-weight: bold; }
+  .loading-msg { font-size: 13px; color: var(--blue); font-weight: bold; text-align: center; padding: 10px; }
 
   @media print { .no-print { display: none !important; } .screen { display: block !important; } }
 </style>
 </head>
 <body>
 
-<!-- SCHERMATA CONFIGURAZIONE -->
+<!-- SCHERMATA SETUP -->
 <div id="screen-setup" class="screen active">
-  <h1>⚙️ Setup</h1>
+  <h2>⚙️ Configurazione Apparecchi</h2>
   <div id="setup-container"></div>
-  <button class="btn-outline" onclick="addSetupItem()">+ Aggiungi Apparecchio</button>
+  <button class="btn-outline" onclick="addSetupItem()">+ Aggiungi Frigo/Gelo</button>
   <button class="btn-primary" onclick="saveSetup()">Salva e Inizia</button>
 </div>
 
-<!-- SCHERMATA REGISTRO -->
+<!-- SCHERMATA PRINCIPALE (INSERIMENTO) -->
 <div id="screen-main" class="screen">
-  <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:10px;">
-    <h2>📝 Inserimento</h2>
-    <button class="btn-ghost" onclick="goToHistory()" style="width:auto;">📜 Vedi Storico</button>
+  <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
+    <h2>📝 Registro HACCP</h2>
+    <button class="btn-ghost" onclick="showHistoryScreen()">📜 Vedi Storico Cloud</button>
   </div>
   <div id="input-container"></div>
   <div class="no-print">
-    <button class="btn-outline" onclick="showSetup()">⚙️ Modifica Apparecchi</button>
+    <button class="btn-outline" onclick="showSetupScreen()">⚙️ Modifica Lista Apparecchi</button>
   </div>
 </div>
 
-<!-- SCHERMATA STORICO -->
+<!-- SCHERMATA STORICO E FILTRI -->
 <div id="screen-history" class="screen">
   <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
-    <h2>📜 Storico</h2>
-    <button class="btn-ghost" onclick="showScreen('screen-main')" style="width:auto;">⬅️ Indietro</button>
+    <h2>☁️ Storico Condiviso</h2>
+    <button class="btn-ghost" onclick="showScreen('screen-main')">⬅️ Indietro</button>
   </div>
 
-  <!-- FILTRO -->
   <div class="card" style="padding: 10px; margin-bottom: 10px;">
-    <label style="font-size: 12px; font-weight: bold;">Filtra per Apparecchio:</label>
-    <select id="filter-select" onchange="renderHistory()" style="margin-top: 5px; margin-bottom: 0;">
-      <option value="all">Tutti i frigoriferi</option>
+    <label style="font-size: 12px; font-weight: bold;">Filtra per apparecchio:</label>
+    <select id="filter-select" onchange="applyFilter()" style="margin-top: 5px; margin-bottom: 0;">
+      <option value="all">Tutti i dati</option>
     </select>
   </div>
-  
-  <div class="card" style="padding:5px; overflow-x: auto;">
+
+  <div id="loading-spinner" class="loading-msg" style="display:none;">Recupero dati dal Cloud...</div>
+
+  <div class="card" style="padding:5px; overflow-x: auto; max-height: 400px; overflow-y: auto;">
     <table class="history-table">
       <thead>
         <tr>
           <th>Data/Ora</th>
-          <th>Apparecchio</th>
+          <th>Nome</th>
           <th>Temp</th>
           <th>Esito</th>
         </tr>
@@ -86,27 +88,30 @@
   </div>
 
   <div class="no-print" style="margin-top: 20px;">
-    <button class="btn-primary" onclick="exportToExcel()">📥 Scarica Excel (Filtrato)</button>
+    <button class="btn-primary" onclick="exportToExcel()">📥 Scarica Excel Autoadattante</button>
     <button class="btn-outline" onclick="window.print()" style="margin-top: 10px;">🖨️ Stampa PDF</button>
-    <button style="color:red; background:none; font-size:11px; margin-top:20px;" onclick="clearLogs()">🗑️ Cancella tutto</button>
   </div>
 </div>
 
 <script>
+  // TUA STRINGA CLOUD PERSONALE
+  const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZsu2-x5UrResgnArJvE60zwhhtezUoRoG64cphvxPGWukuvOxdvDQguTrrKpYhGSH/exec";
+
   let config = JSON.parse(localStorage.getItem('haccp_config')) || [];
-  let logs = JSON.parse(localStorage.getItem('haccp_logs')) || [];
+  let cloudLogs = [];
 
   function init() {
     if (config.length > 0) { showScreen('screen-main'); renderMain(); }
     else { addSetupItem(); }
   }
 
+  // --- FUNZIONI SETUP ---
   function addSetupItem(name = "", type = "frigo") {
     const container = document.getElementById('setup-container');
     const div = document.createElement('div');
     div.className = 'card';
     div.innerHTML = `
-      <input type="text" class="setup-name" value="${name}" placeholder="Nome frigo...">
+      <input type="text" class="setup-name" value="${name}" placeholder="Es: Frigo Salumi">
       <select class="setup-type">
         <option value="frigo" ${type==='frigo'?'selected':''}>Frigorifero (+4°C)</option>
         <option value="gelo" ${type==='gelo'?'selected':''}>Congelatore (-18°C)</option>
@@ -123,89 +128,127 @@
     showScreen('screen-main'); renderMain();
   }
 
-  function showSetup() {
+  function showSetupScreen() {
     document.getElementById('setup-container').innerHTML = '';
     config.forEach(c => addSetupItem(c.name, c.type));
     showScreen('screen-setup');
   }
 
+  // --- FUNZIONI INSERIMENTO ---
   function renderMain() {
     const container = document.getElementById('input-container');
-    const today = new Date().toLocaleDateString('it-IT');
     container.innerHTML = '';
     config.forEach(item => {
-      const lastEntry = [...logs].reverse().find(l => l.name === item.name && l.date === today);
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>${item.name}</strong></div>
-          <input type="number" step="0.1" placeholder="°C" style="width:100px; margin-bottom:0;" onchange="addEntry('${item.name}','${item.type}',this.value)">
-        </div>
-        ${lastEntry ? `<div style="font-size:11px; color:var(--teal); margin-top:5px;">Ultima: ${lastEntry.temp}°C alle ${lastEntry.time}</div>` : ''}`;
+          <div><strong>${item.name}</strong><br><small>${item.type==='frigo'?'Limite +4°C':'Limite -18°C'}</small></div>
+          <input type="number" step="0.1" placeholder="°C" style="width:100px; margin-bottom:0;" onchange="sendEntry('${item.name}','${item.type}',this)">
+        </div>`;
       container.appendChild(card);
     });
   }
 
-  function addEntry(name, type, temp) {
+  async function sendEntry(name, type, inputEl) {
+    const temp = inputEl.value;
     if(temp === "") return;
+    
+    inputEl.disabled = true;
+    inputEl.style.opacity = "0.5";
+
     const now = new Date();
-    logs.push({
+    const entry = {
       date: now.toLocaleDateString('it-IT'),
       time: now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}),
-      name, type, temp: parseFloat(temp),
+      name: name,
+      type: type,
+      temp: parseFloat(temp),
       status: (type==='frigo' && temp<=4) || (type==='gelo' && temp<=-18) ? "OK" : "ERR"
-    });
-    localStorage.setItem('haccp_logs', JSON.stringify(logs));
-    renderMain();
+    };
+
+    try {
+      await fetch(G_SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(entry) });
+      alert("✅ Registrato con successo nel Cloud!");
+      inputEl.value = "";
+    } catch (e) {
+      alert("❌ Errore di invio! Controlla la connessione.");
+    } finally {
+      inputEl.disabled = false;
+      inputEl.style.opacity = "1";
+    }
   }
 
-  // --- LOGICA STORICO E FILTRI ---
-  function goToHistory() {
+  // --- FUNZIONI STORICO E FILTRI ---
+  async function showHistoryScreen() {
+    showScreen('screen-history');
     const select = document.getElementById('filter-select');
     select.innerHTML = '<option value="all">Tutti i frigoriferi</option>';
-    config.forEach(c => {
-      select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-    });
-    showScreen('screen-history');
-    renderHistory();
+    config.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+
+    document.getElementById('loading-spinner').style.display = 'block';
+    try {
+      const response = await fetch(G_SCRIPT_URL);
+      cloudLogs = await response.json();
+      applyFilter();
+    } catch (e) {
+      alert("Errore nel caricamento dati dal foglio Google.");
+    } finally {
+      document.getElementById('loading-spinner').style.display = 'none';
+    }
   }
 
-  function renderHistory() {
-    const filterValue = document.getElementById('filter-select').value;
+  function applyFilter() {
+    const val = document.getElementById('filter-select').value;
     const body = document.getElementById('history-body');
     body.innerHTML = '';
 
-    const filteredLogs = filterValue === 'all' 
-      ? logs 
-      : logs.filter(l => l.name === filterValue);
+    const filtered = val === 'all' ? cloudLogs : cloudLogs.filter(row => row[2] === val);
 
-    [...filteredLogs].reverse().forEach(l => {
+    [...filtered].reverse().forEach(row => {
       body.innerHTML += `<tr>
-        <td>${l.date} ${l.time}</td>
-        <td>${l.name}</td>
-        <td>${l.temp}°C</td>
-        <td class="${l.status==='OK'?'status-ok':'status-err'}">${l.status}</td>
+        <td>${row[0]} ${row[1]}</td>
+        <td>${row[2]}</td>
+        <td>${row[4]}°C</td>
+        <td class="${row[5]==='OK'?'status-ok':'status-err'}">${row[5]}</td>
       </tr>`;
     });
   }
 
+  // --- EXCEL CON AUTOADATTAMENTO ---
   function exportToExcel() {
-    const filterValue = document.getElementById('filter-select').value;
-    const dataToExport = filterValue === 'all' ? logs : logs.filter(l => l.name === filterValue);
+    if(cloudLogs.length === 0) return alert("Nessun dato da esportare.");
     
-    if(dataToExport.length === 0) return alert("Nessun dato da esportare.");
+    // Preparazione dati
+    const val = document.getElementById('filter-select').value;
+    const filtered = val === 'all' ? cloudLogs : cloudLogs.filter(row => row[2] === val);
+    
+    const wsData = [["DATA", "ORA", "APPARECCHIO", "TIPO", "TEMP", "ESITO"]];
+    filtered.forEach(r => wsData.push([r[0], r[1], r[2], r[3], r[4], r[5]]));
 
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const colWidths = Object.keys(dataToExport[0]||{}).map(k => ({wch: 18}));
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Calcolo autoadattamento larghezza colonne
+    const colWidths = wsData[0].map((_, i) => {
+      let maxLen = 10;
+      wsData.forEach(row => {
+        const cellValue = String(row[i] || "");
+        if (cellValue.length > maxLen) maxLen = cellValue.length;
+      });
+      return { wch: maxLen + 2 };
+    });
     ws['!cols'] = colWidths;
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "HACCP");
-    XLSX.writeFile(wb, `Storico_HACCP_${filterValue}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Registro_HACCP");
+    XLSX.writeFile(wb, `HACCP_Export_${val}.xlsx`);
   }
 
-  function clearLogs() { if(confirm("Cancellare tutto?")) { logs=[]; localStorage.removeItem('haccp_logs'); renderHistory(); } }
-  function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
   init();
 </script>
 </body>
