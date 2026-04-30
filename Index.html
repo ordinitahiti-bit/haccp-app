@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>HACCP Cloud - Cucina & Bar</title>
+<title>HACCP Cloud - 3 Zone</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,8 +12,8 @@
   .screen { display: none; padding: 10px; }
   .screen.active { display: block; }
   .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; }
-  .area-selector { display: flex; gap: 10px; margin-bottom: 20px; }
-  .area-btn { flex: 1; padding: 12px; border: 2px solid var(--navy); border-radius: 8px; background: white; color: var(--navy); font-weight: bold; cursor: pointer; }
+  .area-selector { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
+  .area-btn { flex: 1; min-width: 100px; padding: 10px 5px; border: 2px solid var(--navy); border-radius: 8px; background: white; color: var(--navy); font-weight: bold; cursor: pointer; font-size: 13px; }
   .area-btn.active { background: var(--navy); color: white; }
   input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
   button { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
@@ -27,7 +27,7 @@
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
-  <h2>⚙️ Configurazione</h2>
+  <h2>⚙️ Configurazione Locali</h2>
   <div id="setup-container"></div>
   <button class="btn-outline" onclick="addSetupItem()">+ Aggiungi Apparecchio</button>
   <button class="btn-primary" onclick="saveSetup()" style="margin-top:20px;">Salva e Inizia</button>
@@ -39,6 +39,7 @@
   <div class="area-selector">
     <button id="btn-CUCINA" class="area-btn active" onclick="setArea('CUCINA')">🍳 CUCINA</button>
     <button id="btn-BAR" class="area-btn" onclick="setArea('BAR')">☕ BAR</button>
+    <button id="btn-RISTORANTE" class="area-btn" onclick="setArea('RISTORANTE')">🍽️ RISTO</button>
   </div>
   <div id="input-container"></div>
   <button class="btn-outline" onclick="showScreen('screen-history'); loadCloudData()">📜 Storico Cloud</button>
@@ -54,6 +55,7 @@
     <option value="ALL">Tutti i locali</option>
     <option value="CUCINA">Solo Cucina</option>
     <option value="BAR">Solo Bar</option>
+    <option value="RISTORANTE">Solo Ristorante</option>
   </select>
   <div class="card" style="overflow-x:auto;">
     <table class="history-table">
@@ -64,6 +66,7 @@
 </div>
 
 <script>
+  // URL DEL TUO SCRIPT GOOGLE
   const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZsu2-x5UrResgnArJvE60zwhhtezUoRoG64cphvxPGWukuvOxdvDQguTrrKpYhGSH/exec";
   
   let config = JSON.parse(localStorage.getItem('haccp_config')) || [];
@@ -91,6 +94,7 @@
       <select class="setup-area">
         <option value="CUCINA" ${area==='CUCINA'?'selected':''}>Cucina</option>
         <option value="BAR" ${area==='BAR'?'selected':''}>Bar</option>
+        <option value="RISTORANTE" ${area==='RISTORANTE'?'selected':''}>Ristorante</option>
       </select>
       <select class="setup-type">
         <option value="frigo" ${type==='frigo'?'selected':''}>Frigo (+4°C)</option>
@@ -117,7 +121,7 @@
     const filteredConfig = config.filter(c => c.area === currentArea);
     
     if(filteredConfig.length === 0) {
-      container.innerHTML = '<p style="text-align:center; padding:20px;">Nessun frigo configurato per questa sezione.</p>';
+      container.innerHTML = `<p style="text-align:center; padding:20px;">Nessun frigo in ${currentArea}.<br>Vai in configurazione.</p>`;
       return;
     }
 
@@ -146,9 +150,9 @@
 
     try {
       await fetch(G_SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(entry) });
-      alert("Salvato in " + currentArea);
+      alert("✅ Salvato in " + currentArea);
       el.value = "";
-    } catch (e) { alert("Errore!"); }
+    } catch (e) { alert("❌ Errore Cloud!"); }
     el.disabled = false;
   }
 
