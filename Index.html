@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Registro Temperature — HACCP</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1A3A5C;
+    --blue: #2E6DA4;
+    --blue-lt: #D6E4F0;
+    --blue-pale: #EAF3FA;
+    --teal: #0D5C6B;
+    --teal-lt: #D0EEF3;
+    --green: #2D6A0E;
+    --green-lt: #E9F5E0;
+    --amber: #7A4700;
+    --amber-lt: #FEF3D7;
+    --red: #9B1C1C;
+    --red-lt: #FEE2E2;
+    --gray: #f0f4f8;
+    --border: #dde3ea;
+    --text: #1a202c;
+    --text2: #4a5568;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, Arial, sans-serif;
+    background: var(--gray);
+    color: var(--text);
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  .screen { display: none; padding: 1.5rem 1rem; }
+  .screen.active { display: block; }
+
+  input[type=text], input[type=number], input[type=datetime-local] {
+    font-family: inherit;
+    font-size: 15px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    outline: none;
+  }
+
+  input:focus {
+    box-shadow: 0 0 0 3px #378ADD33;
+    border-color: #378ADD;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    padding: 8px 14px;
+    transition: background .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:hover { background: #e8eef5; }
+  button:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+
+  .btn-teal {
+    background: var(--teal);
+    color: #fff;
+    border-color: var(--teal);
+  }
+
+  .btn-green {
+    background: var(--green);
+    color: #E9F5E0;
+    border-color: #1f4d0a;
+  }
+
+  .btn-amber {
+    background: var(--amber);
+    color: #FEF3D7;
+    border-color: #5a3400;
+  }
+
+  .btn-block { width: 100%; padding: 12px; font-size: 15px; font-weight: 600; }
+  .btn-dashed { border-style: dashed; width: 100%; padding: 10px; font-weight: 500; }
+  .btn-ghost { background: none; border: none; color: var(--text2); font-size: 13px; padding: 4px 10px; }
+  .btn-icon { background: none; border: none; color: #c00; font-size: 13px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; }
+  .btn-back { padding: 4px 10px; font-size: 13px; }
+
+  .form-group {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    font-size: 13px;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .type-row { display: flex; gap: 10px; margin-bottom: 10px; }
+
+  .type-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: #fff;
+  }
+
+  .type-btn.frigo.selected {
+    border-color: var(--navy);
+    background: var(--blue-pale);
+  }
+
+  .type-btn.gelo.selected {
+    border-color: var(--teal);
+    background: var(--teal-lt);
+  }
+
+  .setup-item {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: .75rem;
+  }
+
+  .setup-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    color: #c00;
+    font-size: 12px;
+    cursor: pointer;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="screen-setup" class="screen active">
+  <h1 style="font-size:20px;margin-bottom:8px;">❄ Registro temperature</h1>
+  <p style="font-size:13px;color:#666;margin-bottom:20px;">Configura i tuoi apparecchi</p>
+
+  <div id="setup-items"></div>
+
+  <button type="button" class="btn-dashed" onclick="addSetupItem()" style="margin-bottom:1
