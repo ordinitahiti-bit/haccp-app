@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>HACCP Cloud Pro - Report Mensile</title>
+<title>HACCP Pro Cloud</title>
+<!-- Libreria per esportazione Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root { --navy: #1A3A5C; --blue: #2E6DA4; --gray: #f0f4f8; --border: #dde3ea; --red: #9B1C1C; }
-  body { font-family: system-ui, sans-serif; background: var(--gray); max-width: 600px; margin: 0 auto; padding: 10px; }
+  body { font-family: system-ui, sans-serif; background: var(--gray); max-width: 600px; margin: 0 auto; padding: 10px; color: #333; }
   .screen { display: none; padding: 10px; }
   .screen.active { display: block; }
   .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -24,51 +25,53 @@
   .history-table th, .history-table td { padding: 12px 8px; border-bottom: 1px solid var(--border); text-align: left; }
   .history-table th { background: var(--navy); color: white; position: sticky; top: 0; }
   label { font-size: 11px; font-weight: bold; color: var(--navy); text-transform: uppercase; margin-bottom: 4px; display: block; }
+  .status-ok { color: green; font-weight: bold; }
+  .status-err { color: red; font-weight: bold; }
 </style>
 </head>
 <body>
 
-<!-- SCHERMATA SETUP -->
+<!-- SETUP -->
 <div id="screen-setup" class="screen">
-  <h2>⚙️ Configurazione</h2>
+  <h2>⚙️ Configurazione Apparecchi</h2>
   <div id="setup-container"></div>
-  <button class="btn-outline" onclick="addSetupItem()">+ Aggiungi Apparecchio</button>
+  <button class="btn-outline" onclick="addSetupItem()">+ Aggiungi Frigo/Gelo</button>
   <button class="btn-primary" onclick="saveSetup()" style="margin-top:20px;">Salva e Inizia</button>
 </div>
 
-<!-- SCHERMATA PRINCIPALE -->
+<!-- MAIN -->
 <div id="screen-main" class="screen active">
   <h2 style="margin-bottom:15px;">📝 Registro HACCP</h2>
   <div class="area-selector">
-    <button id="btn-CUCINA" class="area-btn active" onclick="setArea('CUCINA')">CUCINA</button>
-    <button id="btn-BAR" class="area-btn" onclick="setArea('BAR')">BAR</button>
-    <button id="btn-RISTORANTE" class="area-btn" onclick="setArea('RISTORANTE')">RISTO</button>
+    <button id="btn-CUCINA" class="area-btn active" onclick="setArea('CUCINA')">🍳 CUCINA</button>
+    <button id="btn-BAR" class="area-btn" onclick="setArea('BAR')">☕ BAR</button>
+    <button id="btn-RISTORANTE" class="area-btn" onclick="setArea('RISTORANTE')">🍽️ RISTO</button>
   </div>
   <div id="input-container"></div>
   <button class="btn-primary" onclick="showScreen('screen-history'); loadCloudData()" style="margin-top: 20px;">📜 Storico & Report Mensili</button>
-  <button class="btn-outline" onclick="showSetupScreen()">⚙️ Modifica Apparecchi</button>
+  <button class="btn-outline" onclick="showSetupScreen()">⚙️ Modifica Configurazione</button>
 </div>
 
-<!-- SCHERMATA STORICO -->
+<!-- STORICO -->
 <div id="screen-history" class="screen">
   <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
-    <h2>☁️ Report Cloud</h2>
-    <button onclick="showScreen('screen-main')" style="width:auto; padding:8px 15px;">⬅️</button>
+    <h2>📊 Report Cloud</h2>
+    <button onclick="showScreen('screen-main')" style="width:auto; padding:8px 15px; background:#ddd; border-radius:5px;">⬅️ Esci</button>
   </div>
   
   <div class="card">
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
       <div>
-        <label>Mese</label>
+        <label>Seleziona Mese</label>
         <select id="filter-month" onchange="renderHistoryTable()"></select>
       </div>
       <div>
-        <label>Locale</label>
+        <label>Zona</label>
         <select id="filter-area" onchange="updateDeviceFilter()">
-          <option value="ALL">Tutti</option>
+          <option value="ALL">Tutte</option>
           <option value="CUCINA">Cucina</option>
           <option value="BAR">Bar</option>
-          <option value="RISTORANTE">Risto</option>
+          <option value="RISTORANTE">Ristorante</option>
         </select>
       </div>
     </div>
@@ -76,7 +79,7 @@
     <select id="filter-device" onchange="renderHistoryTable()">
       <option value="ALL">Tutti i dispositivi</option>
     </select>
-    <button class="btn-excel" onclick="exportToExcel()">📊 Esporta Excel Selezionato</button>
+    <button class="btn-excel" onclick="exportToExcel()">📊 Scarica Excel (Filtro Attivo)</button>
   </div>
 
   <div class="card" style="padding:0; overflow: hidden;">
@@ -90,14 +93,17 @@
 </div>
 
 <script>
-  const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwG68paP-rGPAzzpsopvlKBzfSJc_fizIoxSkQpouupRCqasq-v8oXGICkfnS08Gzbz/exec";
+  // IL TUO URL GOOGLE APPS SCRIPT
+  const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7CobBEyUapgkq_8Od3o0CkFdgWsuGuOm6qfLdoFBYnx2TErI7C8Xkbp0Z-DK1gWsc/exec";
+  
   let config = JSON.parse(localStorage.getItem('haccp_config')) || [];
   let currentArea = 'CUCINA';
   let cloudData = [];
 
   function init() {
     setupMonthFilter();
-    if (config.length > 0) { renderMain(); } else { showSetupScreen(); }
+    if (config.length > 0) { renderMain(); } 
+    else { showSetupScreen(); }
   }
 
   function setupMonthFilter() {
@@ -118,7 +124,7 @@
     const devSel = document.getElementById('filter-device');
     devSel.innerHTML = '<option value="ALL">Tutti i dispositivi</option>';
     
-    // Estrae i nomi unici dai dati scaricati o dalla config
+    // Estrai nomi unici dai dispositivi configurati
     const devices = [...new Set(config.filter(c => area === 'ALL' || c.area === area).map(c => c.name))];
     devices.forEach(d => {
       let opt = document.createElement('option');
@@ -126,12 +132,6 @@
       devSel.appendChild(opt);
     });
     renderHistoryTable();
-  }
-
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id === 'screen-history') updateDeviceFilter();
   }
 
   function setArea(area) {
@@ -144,7 +144,12 @@
   function renderMain() {
     const container = document.getElementById('input-container');
     container.innerHTML = '';
-    config.filter(c => c.area === currentArea).forEach(item => {
+    const filtered = config.filter(c => c.area === currentArea);
+    if(filtered.length === 0) {
+      container.innerHTML = `<p style="text-align:center; padding:20px;">Nessun frigo in ${currentArea}.</p>`;
+      return;
+    }
+    filtered.forEach(item => {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
@@ -192,8 +197,13 @@
     body.innerHTML = '';
 
     const filtered = cloudData.filter(r => {
+      // Salta righe di intestazione o vuote
       if (!r[0] || r[0] === "Data" || r[0].includes("Data")) return false; 
-      const rowMonth = r[0].split('/')[1];
+      
+      const dateParts = r[0].split('/');
+      if (dateParts.length < 2) return false;
+      
+      const rowMonth = dateParts[1];
       const matchMonth = rowMonth === mFilter;
       const matchArea = aFilter === 'ALL' || r[6] === aFilter;
       const matchDevice = dFilter === 'ALL' || r[2] === dFilter;
@@ -201,7 +211,7 @@
     });
 
     if(filtered.length === 0) {
-        body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">Nessun dato per questo filtro</td></tr>';
+        body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">Nessun dato trovato</td></tr>';
         return;
     }
 
@@ -209,7 +219,7 @@
       body.innerHTML += `<tr>
         <td>${r[0]} <small>${r[1]}</small></td>
         <td>${r[2]}<br><small style="color:#888">${r[6]}</small></td>
-        <td style="color:${r[5]==='OK'?'green':'red'}"><b>${r[4]}°</b></td>
+        <td class="${r[5]==='OK'?'status-ok':'status-err'}">${r[4]}°</td>
       </tr>`;
     });
   }
@@ -218,7 +228,7 @@
     const mName = document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
     const dName = document.getElementById('filter-device').value;
     
-    // Esporta solo ciò che è attualmente filtrato a video
+    // Esporta solo ciò che è filtrato
     const mFilter = document.getElementById('filter-month').value;
     const aFilter = document.getElementById('filter-area').value;
     const dFilter = document.getElementById('filter-device').value;
@@ -233,8 +243,14 @@
       Data: r[0], Ora: r[1], Apparecchio: r[2], Tipo: r[3], Temp: r[4], Stato: r[5], Locale: r[6]
     })));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
+    XLSX.utils.book_append_sheet(wb, ws, "Report HACCP");
     XLSX.writeFile(wb, `HACCP_${dName}_${mName}.xlsx`);
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(id === 'screen-history') updateDeviceFilter();
   }
 
   function showSetupScreen() {
@@ -248,13 +264,16 @@
     const div = document.createElement('div');
     div.className = 'card';
     div.innerHTML = `
-      <input type="text" class="setup-name" value="${name}" placeholder="Nome frigo">
+      <input type="text" class="setup-name" value="${name}" placeholder="Es: Frigo Bibite">
       <select class="setup-area">
         <option value="CUCINA" ${area==='CUCINA'?'selected':''}>Cucina</option>
         <option value="BAR" ${area==='BAR'?'selected':''}>Bar</option>
         <option value="RISTORANTE" ${area==='RISTORANTE'?'selected':''}>Ristorante</option>
       </select>
-      <select class="setup-type"><option value="frigo" ${type==='frigo'?'selected':''}>Frigo</option><option value="gelo" ${type==='gelo'?'selected':''}>Gelo</option></select>`;
+      <select class="setup-type">
+        <option value="frigo" ${type==='frigo'?'selected':''}>Frigo (+4°C)</option>
+        <option value="gelo" ${type==='gelo'?'selected':''}>Gelo (-18°C)</option>
+      </select>`;
     document.getElementById('setup-container').appendChild(div);
   }
 
@@ -263,7 +282,8 @@
     config = [];
     names.forEach((n, i) => { if(n.value) config.push({ name: n.value, type: types[i].value, area: areas[i].value }); });
     localStorage.setItem('haccp_config', JSON.stringify(config));
-    showScreen('screen-main'); renderMain();
+    showScreen('screen-main'); 
+    renderMain();
   }
 
   init();
