@@ -8,166 +8,187 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 :root {
   --navy:#1A3A5C; --navy-dark:#142e4a; --blue:#2E6DA4; --blue-light:#e6f1fb;
-  --gray-bg:#f0f4f8; --border:#dde3ea; --border-strong:#c5cdd8;
-  --red:#c0392b; --red-light:#fcebeb; --green:#1a7a4a; --green-light:#eaf3de;
+  --gray-bg:#f0f4f8; --border:#dde3ea;
+  --red:#c0392b; --red-light:#fcebeb;
+  --green:#1a7a4a; --green-light:#eaf3de;
   --amber:#854f0b; --amber-light:#faeeda;
-  --text:#1a1a1a; --text-muted:#6b7280; --surface:#ffffff;
+  --text:#1a1a1a; --text-muted:#6b7280; --surface:#fff;
   --radius:10px; --radius-sm:6px;
 }
-body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--gray-bg); max-width:480px; margin:0 auto; color:var(--text); min-height:100vh; padding-bottom:24px; }
+body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--gray-bg); max-width:480px; margin:0 auto; color:var(--text); min-height:100vh; padding-bottom:30px; }
 
-.topbar { background:var(--navy); padding:16px 16px 0; color:white; position:sticky; top:0; z-index:100; }
-.topbar-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-.topbar h1 { font-size:16px; font-weight:600; margin:0 0 3px; }
-.topbar p { font-size:11px; opacity:0.65; margin:0; }
-.online-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; margin-right:5px; animation:pulse 2.5s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-.top-badge { font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.12); color:white; white-space:nowrap; }
-.top-badge.has-err { background:rgba(192,57,43,0.85); }
+/* ── TOPBAR ── */
+.topbar { background:var(--navy); padding:14px 14px 0; color:#fff; position:sticky; top:0; z-index:200; }
+.topbar-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:11px; }
+.topbar h1 { font-size:15px; font-weight:700; margin:0 0 2px; }
+.topbar p  { font-size:10px; opacity:.65; margin:0; }
+.online-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; margin-right:4px; animation:pulse 2.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+.top-badge { font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,.13); color:#fff; white-space:nowrap; }
+.top-badge.has-err { background:rgba(192,57,43,.85); }
 
-.tabs { display:flex; background:var(--navy-dark); border-top:1px solid rgba(255,255,255,0.08); }
-.tab { flex:1; padding:10px 2px; text-align:center; font-size:10px; font-weight:600; color:rgba(255,255,255,0.45); cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s,border-color 0.15s; letter-spacing:0.04em; text-transform:uppercase; position:relative; }
-.tab.active { color:white; border-bottom-color:#4da3ff; }
+/* ── TABS ── */
+.tabs { display:flex; background:var(--navy-dark); border-top:1px solid rgba(255,255,255,.08); overflow-x:auto; scrollbar-width:none; }
+.tabs::-webkit-scrollbar { display:none; }
+.tab { flex:0 0 auto; min-width:52px; padding:10px 6px; text-align:center; font-size:9.5px; font-weight:700; color:rgba(255,255,255,.4); cursor:pointer; border-bottom:2px solid transparent; transition:color .15s,border-color .15s; letter-spacing:.04em; text-transform:uppercase; position:relative; white-space:nowrap; }
+.tab.active { color:#fff; border-bottom-color:#4da3ff; }
+.rdot { width:7px; height:7px; border-radius:50%; background:var(--red); position:absolute; top:5px; right:4px; display:none; }
+.rdot.on { display:block; }
 
-.screen { display:none; padding:14px; }
+/* ── LOADING SCREEN ── */
+#loading-screen { position:fixed; inset:0; background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; color:#fff; gap:16px; }
+#loading-screen h2 { font-size:18px; font-weight:700; }
+#loading-screen p  { font-size:13px; opacity:.7; }
+.loader { width:36px; height:36px; border:3px solid rgba(255,255,255,.2); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── GENERAL ── */
+.screen { display:none; padding:13px; }
 .screen.active { display:block; }
-.card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:14px; margin-bottom:10px; }
+.card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:13px; margin-bottom:10px; }
+.section-title { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin:13px 0 7px; }
+.separator { border-top:1px solid var(--border); margin:14px 0; }
+.field { margin-bottom:11px; }
+label { font-size:10px; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; display:block; }
+input[type=text],input[type=time],input[type=number],textarea,select { width:100%; padding:10px 11px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:14px; background:var(--surface); color:var(--text); font-family:inherit; }
+input:focus,textarea:focus,select:focus { outline:none; border-color:var(--blue); }
+textarea { resize:vertical; min-height:68px; }
 
-.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
-.stat-card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:12px 14px; }
-.stat-label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:5px; }
-.stat-value { font-size:26px; font-weight:600; color:var(--text); }
-.stat-value.ok { color:var(--green); }
+/* ── STAT GRID ── */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:11px; }
+.stat-card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; }
+.stat-label { font-size:9px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+.stat-value { font-size:24px; font-weight:700; color:var(--text); }
+.stat-value.ok  { color:var(--green); }
 .stat-value.err { color:var(--red); }
 
+/* ── BADGES ── */
+.badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
+.badge-ok  { background:var(--green-light); color:#155a35; }
+.badge-err { background:var(--red-light);   color:#7a1f1f; }
+.badge-fix { background:var(--amber-light); color:var(--amber); }
+.badge-gray{ background:var(--gray-bg);     color:var(--text-muted); }
+
+/* ── ALERT BANNER ── */
 .alert-banner { background:var(--red-light); border:1px solid #f09595; border-radius:var(--radius); padding:11px 13px; margin-bottom:8px; display:flex; align-items:flex-start; gap:10px; }
 .alert-dot { width:8px; height:8px; border-radius:50%; background:var(--red); flex-shrink:0; margin-top:3px; }
 .alert-text { font-size:12px; color:#7a1f1f; line-height:1.5; flex:1; }
-.fix-btn { font-size:11px; font-weight:700; color:var(--red); background:white; border:1px solid #f09595; border-radius:var(--radius-sm); padding:4px 10px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.fix-btn { font-size:11px; font-weight:700; color:var(--red); background:#fff; border:1px solid #f09595; border-radius:var(--radius-sm); padding:4px 10px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
 
-.section-title { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin:14px 0 7px; }
-
+/* ── HIST ITEM ── */
 .hist-item { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
-.hist-name { font-size:13px; font-weight:600; color:var(--text); margin:0 0 2px; }
+.hist-name { font-size:13px; font-weight:600; margin:0 0 2px; }
 .hist-meta { font-size:11px; color:var(--text-muted); }
-.hist-temp { font-size:20px; font-weight:600; margin-bottom:3px; }
+.hist-temp { font-size:20px; font-weight:700; margin-bottom:3px; }
 .hist-right { text-align:right; }
 
-.badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:0.04em; }
-.badge-ok { background:var(--green-light); color:#155a35; }
-.badge-err { background:var(--red-light); color:#7a1f1f; }
-.badge-fix { background:var(--amber-light); color:var(--amber); }
+/* ── AREA PILLS ── */
+.area-pills { display:flex; gap:6px; margin-bottom:11px; flex-wrap:wrap; }
+.area-pill { padding:6px 13px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted); transition:all .15s; user-select:none; }
+.area-pill.active { background:var(--navy); color:#fff; border-color:var(--navy); }
 
-.area-pills { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
-.area-pill { padding:6px 13px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted); transition:all 0.15s; user-select:none; }
-.area-pill.active { background:var(--navy); color:white; border-color:var(--navy); }
-
+/* ── DEVICE ROW ── */
 .device-row { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:12px 13px; margin-bottom:7px; display:flex; align-items:center; gap:11px; }
 .device-row.has-err { border-color:#f09595; background:#fff9f9; }
 .device-icon { width:36px; height:36px; border-radius:9px; background:var(--blue-light); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
 .device-icon.gelo { background:#e1f5ee; }
-.device-name { font-size:13px; font-weight:600; color:var(--text); margin:0 0 2px; }
+.device-name { font-size:13px; font-weight:600; margin:0 0 2px; }
 .device-meta { font-size:11px; color:var(--text-muted); }
 .device-right { margin-left:auto; display:flex; align-items:center; gap:7px; }
-.temp-input { width:65px; padding:8px 6px; font-size:15px; font-weight:500; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:var(--gray-bg); color:var(--text); text-align:center; transition:border-color 0.15s; }
-.temp-input:focus { outline:none; border-color:var(--blue); background:white; }
+.temp-input { width:65px; padding:8px 6px; font-size:15px; font-weight:500; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:var(--gray-bg); color:var(--text); text-align:center; transition:border-color .15s; }
+.temp-input:focus { outline:none; border-color:var(--blue); background:#fff; }
 .temp-input.warn { border-color:#f09595; background:#fff5f5; }
-.send-btn { width:34px; height:34px; border-radius:var(--radius-sm); background:var(--navy); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:opacity 0.15s,transform 0.1s; }
-.send-btn:active { transform:scale(0.93); opacity:0.8; }
-.send-btn svg { width:13px; height:13px; fill:white; }
-.send-btn:disabled { opacity:0.4; cursor:not-allowed; }
-.temp-warn { font-size:10px; color:var(--red); font-weight:600; margin-top:3px; display:none; }
-.temp-warn.visible { display:block; }
+.send-btn { width:34px; height:34px; border-radius:var(--radius-sm); background:var(--navy); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:opacity .15s,transform .1s; }
+.send-btn:active { transform:scale(.93); opacity:.8; }
+.send-btn svg { width:13px; height:13px; fill:#fff; }
+.send-btn:disabled { opacity:.4; cursor:not-allowed; }
+.temp-warn { font-size:10px; color:var(--red); font-weight:700; margin-top:3px; display:none; }
+.temp-warn.on { display:block; }
 
+/* ── SCHEDULE ── */
 .schedule-row { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; margin-bottom:6px; display:flex; align-items:center; gap:12px; }
-.schedule-time { font-size:20px; font-weight:700; color:var(--navy); min-width:52px; }
-.schedule-label { font-size:13px; font-weight:500; color:var(--text); }
-.schedule-sub { font-size:11px; color:var(--text-muted); }
-.schedule-status { margin-left:auto; }
-.schedule-row.done { border-color:var(--green); background:#f6fdf8; }
-.schedule-row.overdue { border-color:var(--red); background:#fff5f5; }
+.schedule-time { font-size:19px; font-weight:700; color:var(--navy); min-width:50px; }
+.schedule-row.done    { border-color:var(--green); background:#f6fdf8; }
+.schedule-row.overdue { border-color:var(--red);   background:#fff5f5; }
 
-.firma-box { border:2px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:10px; }
-.firma-box canvas { border:1px solid var(--border); border-radius:var(--radius-sm); width:100%; height:120px; background:white; cursor:crosshair; touch-action:none; display:block; }
-.firma-saved { background:var(--green-light); border-radius:var(--radius-sm); padding:8px; font-size:12px; color:var(--green); font-weight:600; text-align:center; display:none; }
-.firma-saved.visible { display:block; }
+/* ── FIRMA ── */
+.firma-box { border:2px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:10px; }
+.firma-box canvas { border:1px solid var(--border); border-radius:var(--radius-sm); width:100%; height:110px; background:#fff; cursor:crosshair; touch-action:none; display:block; }
+.firma-saved { background:var(--green-light); border-radius:var(--radius-sm); padding:8px; font-size:12px; color:var(--green); font-weight:700; text-align:center; display:none; }
+.firma-saved.on { display:block; }
+.operatore-chip { display:inline-block; padding:6px 13px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted); margin:3px 5px 3px 0; transition:all .15s; }
+.operatore-chip.sel { background:var(--navy); color:#fff; border-color:var(--navy); }
 
-.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; display:flex; align-items:flex-end; justify-content:center; }
+/* ── MODAL ── */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:500; display:flex; align-items:flex-end; justify-content:center; }
 .modal-overlay.hidden { display:none; }
 .modal { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:20px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; }
-.modal h3 { font-size:15px; font-weight:700; margin-bottom:14px; color:var(--text); }
+.modal h3 { font-size:15px; font-weight:700; margin-bottom:12px; }
 .modal-close { float:right; background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer; }
-.action-chip { display:inline-block; padding:7px 13px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); margin:4px 4px 4px 0; transition:all 0.15s; }
-.action-chip.selected { background:var(--navy); color:white; border-color:var(--navy); }
+.action-chip { display:inline-block; padding:7px 12px; border-radius:20px; font-size:12px; cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); margin:3px 3px 3px 0; transition:all .15s; }
+.action-chip.sel { background:var(--navy); color:#fff; border-color:var(--navy); }
 
-input[type=text],input[type=time],input[type=number],textarea,select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:14px; background:var(--surface); color:var(--text); font-family:inherit; }
-input:focus,textarea:focus,select:focus { outline:none; border-color:var(--blue); }
-textarea { resize:vertical; min-height:70px; }
-label { font-size:11px; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; display:block; }
-.field { margin-bottom:12px; }
-
-.btn { width:100%; padding:13px; border-radius:var(--radius); border:none; font-weight:700; font-size:14px; cursor:pointer; transition:opacity 0.15s,transform 0.1s; font-family:inherit; }
-.btn:active { transform:scale(0.98); opacity:0.9; }
-.btn-primary { background:var(--navy); color:white; }
-.btn-success { background:#1D6F42; color:white; }
+/* ── BUTTONS ── */
+.btn { width:100%; padding:12px; border-radius:var(--radius); border:none; font-weight:700; font-size:14px; cursor:pointer; transition:opacity .15s,transform .1s; font-family:inherit; }
+.btn:active { transform:scale(.98); opacity:.9; }
+.btn-primary { background:var(--navy); color:#fff; }
+.btn-success { background:#1D6F42; color:#fff; }
 .btn-outline { background:var(--surface); color:var(--navy); border:2px solid var(--navy); }
-.btn-pdf { background:#7a1f1f; color:white; }
+.btn-pdf     { background:#7a1f1f; color:#fff; }
 .btn-row { display:flex; gap:8px; margin-bottom:10px; }
 .btn-row .btn { flex:1; padding:10px; font-size:12px; }
 
-#toast-container { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:calc(100% - 28px); max-width:452px; z-index:999; pointer-events:none; }
-.toast { border-radius:var(--radius); padding:11px 15px; font-size:13px; font-weight:500; margin-bottom:8px; display:flex; align-items:center; gap:9px; animation:slideUp 0.25s ease,fadeOut 0.4s ease 3s forwards; pointer-events:auto; }
-.toast.success { background:var(--green); color:white; }
-.toast.error { background:var(--red); color:white; }
-.toast.warning { background:#d97706; color:white; }
-@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-@keyframes fadeOut { to{opacity:0} }
+/* ── SETUP ITEMS ── */
+.setup-item { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; margin-bottom:7px; display:flex; align-items:center; gap:10px; }
+.setup-info .name { font-size:13px; font-weight:600; }
+.setup-info .sub  { font-size:11px; color:var(--text-muted); margin-top:1px; }
+.del-btn { margin-left:auto; width:28px; height:28px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent; cursor:pointer; color:var(--text-muted); font-size:15px; display:flex; align-items:center; justify-content:center; transition:background .15s,color .15s; }
+.del-btn:hover { background:var(--red-light); color:var(--red); border-color:#f09595; }
+.setup-form { background:var(--surface); border-radius:var(--radius); border:2px dashed var(--border); padding:13px; margin-top:8px; }
 
-.filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
-
-.offline-bar { background:var(--amber-light); border-bottom:1px solid #f5c185; padding:7px 14px; font-size:11px; font-weight:600; color:var(--amber); display:none; text-align:center; }
-.offline-bar.visible { display:block; }
-
-.spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; }
-@keyframes spin { to{transform:rotate(360deg)} }
-
-.empty-state { text-align:center; padding:30px 20px; color:var(--text-muted); }
-.empty-state .icon { font-size:28px; margin-bottom:8px; }
-.empty-state p { font-size:13px; margin-top:4px; }
-
+/* ── HISTORY TABLE ── */
 .hist-table { width:100%; border-collapse:collapse; font-size:12px; }
-.hist-table th { background:var(--navy); color:white; padding:10px 8px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; }
-.hist-table td { padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+.hist-table th { background:var(--navy); color:#fff; padding:9px 8px; text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:.05em; }
+.hist-table td { padding:9px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
 .hist-table tr:last-child td { border-bottom:none; }
 .hist-table tr.err-row { background:#fff9f9; }
 
-.setup-item { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; margin-bottom:7px; display:flex; align-items:center; gap:10px; }
-.setup-info .name { font-size:13px; font-weight:600; color:var(--text); }
-.setup-info .sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
-.del-btn { margin-left:auto; width:28px; height:28px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent; cursor:pointer; color:var(--text-muted); font-size:15px; display:flex; align-items:center; justify-content:center; transition:background 0.15s,color 0.15s; }
-.del-btn:hover { background:var(--red-light); color:var(--red); border-color:#f09595; }
+/* ── TOAST ── */
+#toast-wrap { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); width:calc(100% - 28px); max-width:452px; z-index:999; pointer-events:none; }
+.toast { border-radius:var(--radius); padding:11px 14px; font-size:13px; font-weight:500; margin-bottom:7px; display:flex; align-items:center; gap:9px; animation:slideUp .25s ease,fadeOut .4s ease 3s forwards; pointer-events:auto; }
+.toast.success { background:var(--green); color:#fff; }
+.toast.error   { background:var(--red);   color:#fff; }
+.toast.warning { background:#d97706;      color:#fff; }
+@keyframes slideUp  { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes fadeOut  { to{opacity:0} }
 
-.setup-form { background:var(--surface); border-radius:var(--radius); border:2px dashed var(--border); padding:14px; margin-top:10px; }
-
-.queue-info { font-size:11px; color:var(--amber); font-weight:600; padding:6px 0; display:none; }
-.queue-info.visible { display:block; }
-
-.reminder-dot { width:8px; height:8px; border-radius:50%; background:var(--red); display:none; position:absolute; top:6px; right:6px; }
-.reminder-dot.visible { display:block; }
-
-.operatore-chip { display:inline-block; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted); margin:4px 6px 4px 0; transition:all 0.15s; }
-.operatore-chip.selected { background:var(--navy); color:white; border-color:var(--navy); }
-
-.separator { border-top:1px solid var(--border); margin:16px 0; }
+/* ── MISC ── */
+.offline-bar { background:var(--amber-light); border-bottom:1px solid #f5c185; padding:7px 14px; font-size:11px; font-weight:600; color:var(--amber); display:none; text-align:center; }
+.offline-bar.on { display:block; }
+.queue-info { font-size:11px; color:var(--amber); font-weight:700; padding:6px 0; display:none; }
+.queue-info.on { display:block; }
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+.empty-state { text-align:center; padding:28px 20px; color:var(--text-muted); }
+.empty-state .ic { font-size:28px; margin-bottom:8px; }
+.empty-state p  { font-size:13px; margin-top:4px; }
+.sync-info { font-size:10px; color:var(--text-muted); text-align:right; margin-bottom:6px; }
 </style>
 </head>
 <body>
 
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loader"></div>
+  <h2>HACCP Pro Cloud</h2>
+  <p id="loading-msg">Sincronizzazione in corso...</p>
+</div>
+
 <div id="offline-bar" class="offline-bar">⚠️ Nessuna connessione — dati salvati localmente</div>
 
+<!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-row">
     <div>
@@ -179,7 +200,7 @@ label { font-size:11px; font-weight:700; color:var(--navy); text-transform:upper
   <div class="tabs">
     <div class="tab active" onclick="switchTab('dash',this)">Oggi</div>
     <div class="tab" onclick="switchTab('log',this)">Registra</div>
-    <div class="tab" onclick="switchTab('schedule',this)">Orari<span class="reminder-dot" id="rdot"></span></div>
+    <div class="tab" onclick="switchTab('schedule',this)">Orari<span class="rdot" id="rdot"></span></div>
     <div class="tab" onclick="switchTab('firma',this)">Firma</div>
     <div class="tab" onclick="switchTab('history',this)">Report</div>
     <div class="tab" onclick="switchTab('setup',this)">Setup</div>
@@ -198,7 +219,7 @@ label { font-size:11px; font-weight:700; color:var(--navy); text-transform:upper
     </div>
     <div class="field">
       <label>Note</label>
-      <textarea id="action-note" placeholder="Descrivi l'intervento adottato..."></textarea>
+      <textarea id="action-note" placeholder="Descrivi l'intervento..."></textarea>
     </div>
     <div class="field">
       <label>Responsabile</label>
@@ -214,16 +235,16 @@ label { font-size:11px; font-weight:700; color:var(--navy); text-transform:upper
     <div class="stat-card"><div class="stat-label">Rilevazioni oggi</div><div class="stat-value" id="stat-count">—</div></div>
     <div class="stat-card"><div class="stat-label">Anomalie</div><div class="stat-value err" id="stat-err">—</div></div>
     <div class="stat-card"><div class="stat-label">Apparecchi OK</div><div class="stat-value ok" id="stat-ok">—</div></div>
-    <div class="stat-card"><div class="stat-label">Ultima ril.</div><div class="stat-value" id="stat-last" style="font-size:18px;padding-top:4px;">—</div></div>
+    <div class="stat-card"><div class="stat-label">Ultima ril.</div><div class="stat-value" id="stat-last" style="font-size:17px;padding-top:4px;">—</div></div>
   </div>
   <div id="dash-alerts"></div>
   <div class="section-title">Ultime rilevazioni</div>
-  <div id="dash-recent"><div class="empty-state"><div class="icon">☁️</div><p>Caricamento dati cloud...</p></div></div>
+  <div id="dash-recent"><div class="empty-state"><div class="ic">☁️</div><p>Caricamento...</p></div></div>
 </div>
 
 <!-- REGISTRA -->
 <div id="screen-log" class="screen">
-  <div class="area-pills">
+  <div class="area-pills" id="area-pills">
     <span class="area-pill active" onclick="setArea('CUCINA',this)">🍳 Cucina</span>
     <span class="area-pill" onclick="setArea('BAR',this)">☕ Bar</span>
     <span class="area-pill" onclick="setArea('RISTORANTE',this)">🍽️ Ristorante</span>
@@ -235,16 +256,16 @@ label { font-size:11px; font-weight:700; color:var(--navy); text-transform:upper
 <!-- ORARI -->
 <div id="screen-schedule" class="screen">
   <div class="card">
-    <div class="section-title" style="margin-top:0;">Sessioni di rilevazione</div>
-    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Configura gli orari in cui le temperature devono essere controllate. Il punto rosso nell'header si accende se una sessione è in ritardo.</p>
+    <div class="section-title" style="margin-top:0;">Sessioni configurate</div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:11px;">Il pallino rosso nell'header si accende se una sessione è in ritardo.</p>
     <div id="schedule-slots"></div>
-    <div style="display:flex;gap:8px;margin-top:10px;">
+    <div style="display:flex;gap:7px;margin-top:10px;">
       <input type="time" id="new-slot-time" style="flex:1;">
       <input type="text" id="new-slot-label" placeholder="Es: Apertura" style="flex:1.5;">
-      <button onclick="addSlot()" style="padding:10px 14px;background:var(--navy);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;white-space:nowrap;font-family:inherit;">+</button>
+      <button onclick="addSlot()" style="padding:10px 13px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">+</button>
     </div>
   </div>
-  <div class="section-title">Stato sessioni di oggi</div>
+  <div class="section-title">Stato di oggi</div>
   <div id="schedule-today"></div>
 </div>
 
@@ -262,22 +283,22 @@ label { font-size:11px; font-weight:700; color:var(--navy); text-transform:upper
       <input type="text" id="firma-data-display" readonly style="background:var(--gray-bg);color:var(--text-muted);">
     </div>
     <div class="firma-box">
-      <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Firma digitale</p>
-      <canvas id="firma-canvas" width="440" height="120"></canvas>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:7px;">Firma digitale</p>
+      <canvas id="firma-canvas" width="440" height="110"></canvas>
       <div style="display:flex;gap:8px;margin-top:10px;">
         <button onclick="clearFirma()" class="btn btn-outline" style="flex:1;padding:9px;font-size:12px;">✕ Cancella</button>
         <button onclick="saveFirma()" class="btn btn-primary" style="flex:2;padding:9px;font-size:12px;">✓ Salva firma turno</button>
       </div>
     </div>
-    <div class="firma-saved" id="firma-saved-msg">✓ Firma salvata per questo turno</div>
+    <div class="firma-saved" id="firma-saved-msg">✓ Firma salvata</div>
   </div>
-  <div class="section-title">Firme registrate oggi</div>
+  <div class="section-title">Firme di oggi</div>
   <div id="firme-list"></div>
 </div>
 
 <!-- REPORT -->
 <div id="screen-history" class="screen">
-  <div class="filter-grid">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
     <select id="filter-month" onchange="renderHistory()"></select>
     <select id="filter-area" onchange="updateDeviceFilter()">
       <option value="ALL">Tutte le zone</option>
@@ -291,7 +312,7 @@ label { font-size:11px; font-weight:700; color:var(--navy); text-transform:upper
     <button class="btn btn-outline" id="btn-only-err" onclick="toggleErrFilter()" style="flex:1;padding:9px;font-size:12px;border-width:1.5px;">Solo anomalie</button>
     <button class="btn btn-success" onclick="exportExcel()" style="flex:1;padding:9px;font-size:12px;">📊 Excel</button>
   </div>
-  <button class="btn btn-pdf" onclick="exportPDF()" style="margin-bottom:12px;padding:11px;">📄 Genera PDF ufficiale HACCP</button>
+  <button class="btn btn-pdf" onclick="exportPDF()" style="margin-bottom:11px;padding:11px;">📄 Genera PDF ufficiale HACCP</button>
   <div class="card" style="padding:0;overflow:hidden;">
     <div style="max-height:400px;overflow-y:auto;">
       <table class="hist-table">
@@ -305,101 +326,302 @@ label { font-size:11px; font-weight:700; color:var(--navy); text-transform:upper
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen">
-  <div class="section-title">Apparecchi configurati</div>
-  <div id="setup-list"></div>
-  <div class="section-title" style="margin-top:16px;">Aggiungi apparecchio</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="section-title" style="margin:0;">Apparecchi</div>
+    <button onclick="pushConfig()" style="font-size:11px;font-weight:700;padding:6px 12px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;" id="sync-cfg-btn">☁ Sincronizza</button>
+  </div>
+  <div id="setup-list" style="margin-top:8px;"></div>
   <div class="setup-form">
     <div class="field"><label>Nome</label><input type="text" id="new-name" placeholder="Es: Frigo Verdure"></div>
-    <div class="field"><label>Zona</label><select id="new-area"><option value="CUCINA">🍳 Cucina</option><option value="BAR">☕ Bar</option><option value="RISTORANTE">🍽️ Ristorante</option></select></div>
-    <div class="field"><label>Tipo</label><select id="new-type"><option value="frigo">❄️ Frigo (soglia +4°C)</option><option value="gelo">🧊 Gelo (soglia -18°C)</option></select></div>
-    <button class="btn btn-primary" onclick="addDevice()">+ Aggiungi</button>
+    <div class="field"><label>Zona</label>
+      <select id="new-area">
+        <option value="CUCINA">🍳 Cucina</option>
+        <option value="BAR">☕ Bar</option>
+        <option value="RISTORANTE">🍽️ Ristorante</option>
+      </select>
+    </div>
+    <div class="field"><label>Tipo</label>
+      <select id="new-type">
+        <option value="frigo">❄️ Frigo (soglia +4°C)</option>
+        <option value="gelo">🧊 Gelo (soglia -18°C)</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="addDevice()">+ Aggiungi apparecchio</button>
   </div>
 
   <div class="separator"></div>
-  <div class="section-title">Operatori abilitati</div>
-  <div id="operatori-setup-list"></div>
-  <div style="display:flex;gap:8px;margin-top:8px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="section-title" style="margin:0;">Operatori</div>
+  </div>
+  <div id="operatori-setup-list" style="margin-top:8px;"></div>
+  <div style="display:flex;gap:7px;margin-top:8px;">
     <input type="text" id="new-operatore" placeholder="Nome operatore" style="flex:1;">
-    <button onclick="addOperatore()" style="padding:10px 14px;background:var(--navy);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">+</button>
+    <button onclick="addOperatore()" style="padding:10px 13px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">+</button>
   </div>
 
   <div class="separator"></div>
-  <div class="section-title">Intestazione documento PDF</div>
+  <div class="section-title">Intestazione PDF</div>
   <div class="card">
-    <div class="field"><label>Nome azienda / ristorante</label><input type="text" id="cfg-azienda" placeholder="Es: Ristorante Da Mario" oninput="saveCfg()"></div>
-    <div class="field"><label>Indirizzo</label><input type="text" id="cfg-indirizzo" placeholder="Via Roma 1, Milano" oninput="saveCfg()"></div>
-    <div class="field"><label>Responsabile HACCP</label><input type="text" id="cfg-responsabile" placeholder="Nome del responsabile" oninput="saveCfg()"></div>
+    <div class="field"><label>Nome azienda</label><input type="text" id="cfg-azienda" placeholder="Es: Ristorante Da Mario" oninput="saveCfgLocal()"></div>
+    <div class="field"><label>Indirizzo</label><input type="text" id="cfg-indirizzo" placeholder="Via Roma 1, Milano" oninput="saveCfgLocal()"></div>
+    <div class="field"><label>Responsabile HACCP</label><input type="text" id="cfg-responsabile" placeholder="Nome del responsabile" oninput="saveCfgLocal()"></div>
   </div>
 
   <div class="separator"></div>
-  <p style="font-size:10px;color:var(--text-muted);word-break:break-all;background:var(--blue-light);padding:8px;border-radius:6px;line-height:1.6;">🔗 Google Apps Script collegato:<br>https://script.google.com/macros/s/AKfycbxV_KD1fH3TMwDFXUE9kjH5DQW8r1pA4FniA0-bOwQIT8Ew9xEp7gwIct4HEANCttXtdA/exec</p>
+  <div class="section-title">Promemoria orari</div>
+  <div class="card">
+    <div id="schedule-slots-setup"></div>
+    <div style="display:flex;gap:7px;margin-top:8px;">
+      <input type="time" id="new-slot-time2" style="flex:1;">
+      <input type="text" id="new-slot-label2" placeholder="Es: Apertura" style="flex:1.5;">
+      <button onclick="addSlotSetup()" style="padding:10px 13px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">+</button>
+    </div>
+  </div>
+
+  <div class="separator"></div>
+  <p style="font-size:10px;color:var(--text-muted);word-break:break-all;background:var(--blue-light);padding:8px;border-radius:6px;line-height:1.6;">
+    🔗 Script collegato:<br>https://script.google.com/macros/s/AKfycbxV_KD1fH3TMwDFXUE9kjH5DQW8r1pA4FniA0-bOwQIT8Ew9xEp7gwIct4HEANCttXtdA/exec
+  </p>
+  <p class="sync-info" id="last-sync-label"></p>
 </div>
 
-<div id="toast-container"></div>
+<div id="toast-wrap"></div>
 
 <script>
-const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxV_KD1fH3TMwDFXUE9kjH5DQW8r1pA4FniA0-bOwQIT8Ew9xEp7gwIct4HEANCttXtdA/exec";
+// ═══════════════════════════════════════════════════════
+// COSTANTI
+// ═══════════════════════════════════════════════════════
+const G = "https://script.google.com/macros/s/AKfycbxV_KD1fH3TMwDFXUE9kjH5DQW8r1pA4FniA0-bOwQIT8Ew9xEp7gwIct4HEANCttXtdA/exec";
 const AZIONI_PRESET = ["Prodotti spostati","Tecnico chiamato","Impostazioni corrette","Prodotti smaltiti","Porta controllata","Sbrinamento effettuato","In attesa verifica"];
 
-let config        = JSON.parse(localStorage.getItem('haccp_config_v3'))    || [];
-let operatori     = JSON.parse(localStorage.getItem('haccp_operatori'))    || [];
-let scheduleSlots = JSON.parse(localStorage.getItem('haccp_schedule'))     || [{time:"09:00",label:"Apertura"},{time:"15:00",label:"Pomeriggio"},{time:"21:00",label:"Chiusura"}];
-let aziendaCfg    = JSON.parse(localStorage.getItem('haccp_azienda'))      || {azienda:'',indirizzo:'',responsabile:''};
-let lastTemps     = JSON.parse(localStorage.getItem('haccp_last_temps'))   || {};
-let offlineQueue  = JSON.parse(localStorage.getItem('haccp_queue'))        || [];
-let corrective    = JSON.parse(localStorage.getItem('haccp_corrective'))   || {};
-let cloudData     = [];
+// ═══════════════════════════════════════════════════════
+// STATO (tutto sincronizzato dal cloud all'avvio)
+// ═══════════════════════════════════════════════════════
+let config        = [];   // apparecchi  — viene da Sheets "Config"
+let operatori     = [];   // operatori   — viene da Sheets "Config"
+let scheduleSlots = [];   // orari       — viene da Sheets "Config"
+let aziendaCfg    = {};   // intestazione— viene da Sheets "Config"
+let cloudData     = [];   // temperature — da Sheets "Temperature"
+let cloudAzioni   = [];   // azioni      — da Sheets "Azioni Correttive"
+let cloudFirme    = [];   // firme       — da Sheets "Firme"
+let lastTemps     = JSON.parse(localStorage.getItem('h_lasttemps')) || {};
+let offlineQueue  = JSON.parse(localStorage.getItem('h_queue'))     || [];
+let corrective    = {};   // merge locale+cloud
 let currentArea   = 'CUCINA';
 let onlyErr       = false;
 let isOnline      = navigator.onLine;
 let modalEntry    = null;
 let firmaCanvas, firmaCtx, drawing = false;
 
-// ---- INIT ----
-function init() {
+// ═══════════════════════════════════════════════════════
+// INIT — carica tutto dal cloud, poi mostra l'app
+// ═══════════════════════════════════════════════════════
+async function init() {
+  setLoadingMsg('Connessione al cloud...');
+  navigator.onLine ? await syncAll() : loadFromLocal();
+  hideLoading();
   setupMonthFilter();
   updateDate();
-  loadCfgFields();
+  applyConfig();
+  renderAll();
+  initFirmaCanvas();
+  checkReminderDot();
+  setInterval(checkReminderDot, 60000);
+  setInterval(() => { if(isOnline) syncTemperature(); }, 120000); // refresh ogni 2 min
+  window.addEventListener('online',  onOnline);
+  window.addEventListener('offline', onOffline);
+}
+
+async function syncAll() {
+  setLoadingMsg('Scarico configurazione...');
+  await pullConfig();
+  setLoadingMsg('Scarico temperature...');
+  await pullTemperature();
+  setLoadingMsg('Scarico azioni correttive...');
+  await pullAzioni();
+  setLoadingMsg('Scarico firme...');
+  await pullFirme();
+  saveAllLocal();
+}
+
+function loadFromLocal() {
+  config        = JSON.parse(localStorage.getItem('h_config'))    || [];
+  operatori     = JSON.parse(localStorage.getItem('h_operatori')) || [];
+  scheduleSlots = JSON.parse(localStorage.getItem('h_schedule'))  || [{time:"09:00",label:"Apertura"},{time:"15:00",label:"Pomeriggio"},{time:"21:00",label:"Chiusura"}];
+  aziendaCfg    = JSON.parse(localStorage.getItem('h_azienda'))   || {};
+  cloudData     = JSON.parse(localStorage.getItem('h_clouddata')) || [];
+  cloudAzioni   = JSON.parse(localStorage.getItem('h_azioni'))    || [];
+  cloudFirme    = JSON.parse(localStorage.getItem('h_firme'))     || [];
+  buildCorrective();
+}
+
+function saveAllLocal() {
+  localStorage.setItem('h_config',    JSON.stringify(config));
+  localStorage.setItem('h_operatori', JSON.stringify(operatori));
+  localStorage.setItem('h_schedule',  JSON.stringify(scheduleSlots));
+  localStorage.setItem('h_azienda',   JSON.stringify(aziendaCfg));
+  localStorage.setItem('h_clouddata', JSON.stringify(cloudData));
+  localStorage.setItem('h_azioni',    JSON.stringify(cloudAzioni));
+  localStorage.setItem('h_firme',     JSON.stringify(cloudFirme));
+}
+
+function setLoadingMsg(m) {
+  const el = document.getElementById('loading-msg');
+  if (el) el.textContent = m;
+}
+function hideLoading() {
+  const el = document.getElementById('loading-screen');
+  if (el) el.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// PULL DAL CLOUD
+// ═══════════════════════════════════════════════════════
+async function pullConfig() {
+  try {
+    const r = await fetch(G + '?tipo=config');
+    const rows = await r.json();
+    // Righe: [chiave, valore]
+    // chiavi: device_* , operatore_* , slot_* , azienda, indirizzo, responsabile
+    config=[]; operatori=[]; scheduleSlots=[]; aziendaCfg={};
+    rows.slice(1).forEach(r => {
+      if (!r[0]) return;
+      const k = String(r[0]);
+      const v = String(r[1]||'');
+      if (k.startsWith('device_')) {
+        try { config.push(JSON.parse(v)); } catch(e){}
+      } else if (k.startsWith('operatore_')) {
+        operatori.push(v);
+      } else if (k.startsWith('slot_')) {
+        try { scheduleSlots.push(JSON.parse(v)); } catch(e){}
+      } else if (k === 'azienda')       { aziendaCfg.azienda = v; }
+        else if (k === 'indirizzo')     { aziendaCfg.indirizzo = v; }
+        else if (k === 'responsabile')  { aziendaCfg.responsabile = v; }
+    });
+    scheduleSlots.sort((a,b)=>a.time.localeCompare(b.time));
+  } catch(e) { loadConfigLocal(); }
+}
+
+function loadConfigLocal() {
+  config        = JSON.parse(localStorage.getItem('h_config'))    || [];
+  operatori     = JSON.parse(localStorage.getItem('h_operatori')) || [];
+  scheduleSlots = JSON.parse(localStorage.getItem('h_schedule'))  || [{time:"09:00",label:"Apertura"},{time:"15:00",label:"Pomeriggio"},{time:"21:00",label:"Chiusura"}];
+  aziendaCfg    = JSON.parse(localStorage.getItem('h_azienda'))   || {};
+}
+
+async function pullTemperature() {
+  try {
+    const r = await fetch(G + '?tipo=temperature');
+    cloudData = await r.json();
+  } catch(e) {
+    cloudData = JSON.parse(localStorage.getItem('h_clouddata')) || [];
+  }
+}
+
+async function pullAzioni() {
+  try {
+    const r = await fetch(G + '?tipo=azioni');
+    cloudAzioni = await r.json();
+    buildCorrective();
+  } catch(e) {
+    cloudAzioni = JSON.parse(localStorage.getItem('h_azioni')) || [];
+    buildCorrective();
+  }
+}
+
+async function pullFirme() {
+  try {
+    const r = await fetch(G + '?tipo=firme');
+    cloudFirme = await r.json();
+  } catch(e) {
+    cloudFirme = JSON.parse(localStorage.getItem('h_firme')) || [];
+  }
+}
+
+async function syncTemperature() {
+  await pullTemperature();
+  localStorage.setItem('h_clouddata', JSON.stringify(cloudData));
+  buildDash(); updateDashBadge(); checkReminderDot();
+  document.getElementById('last-sync-label').textContent =
+    'Ultimo aggiornamento: ' + new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+}
+
+function buildCorrective() {
+  corrective = {};
+  cloudAzioni.slice(1).forEach(r => {
+    if (!r[0]||r[0]==='Data Anomalia') return;
+    const key = `${r[2]}_${r[0]}_${r[1]}`;
+    corrective[key] = {
+      azioni: (r[5]||'').split(', ').filter(Boolean),
+      note: r[6]||'', responsabile: r[7]||'', salvato: r[8]||''
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// PUSH CONFIGURAZIONE AL CLOUD
+// ═══════════════════════════════════════════════════════
+async function pushConfig() {
+  const btn = document.getElementById('sync-cfg-btn');
+  btn.textContent = '⏳'; btn.disabled = true;
+  const rows = [];
+  config.forEach((c,i)    => rows.push([`device_${i}`,     JSON.stringify(c)]));
+  operatori.forEach((o,i) => rows.push([`operatore_${i}`,  o]));
+  scheduleSlots.forEach((s,i) => rows.push([`slot_${i}`,   JSON.stringify(s)]));
+  rows.push(['azienda',      aziendaCfg.azienda      || '']);
+  rows.push(['indirizzo',    aziendaCfg.indirizzo    || '']);
+  rows.push(['responsabile', aziendaCfg.responsabile || '']);
+  try {
+    await fetch(G, { method:'POST', mode:'no-cors', body: JSON.stringify({ tipo:'config', rows }) });
+    showToast('Configurazione sincronizzata su tutti i device','success');
+  } catch(e) { showToast('Errore sincronizzazione','error'); }
+  btn.textContent = '☁ Sincronizza'; btn.disabled = false;
+  saveAllLocal();
+}
+
+// ═══════════════════════════════════════════════════════
+// APPLY CONFIG → aggiorna UI con i dati scaricati
+// ═══════════════════════════════════════════════════════
+function applyConfig() {
+  // Campi PDF
+  const a = document.getElementById('cfg-azienda');
+  const i = document.getElementById('cfg-indirizzo');
+  const r = document.getElementById('cfg-responsabile');
+  if(a) a.value = aziendaCfg.azienda      || '';
+  if(i) i.value = aziendaCfg.indirizzo    || '';
+  if(r) r.value = aziendaCfg.responsabile || '';
+}
+
+function renderAll() {
   renderSetup();
   renderOperatoriSetup();
   renderDevices();
   renderScheduleConfig();
+  renderScheduleSlotsSetup();
   renderFirmaScreen();
-  checkOnline();
-  checkReminderDot();
-  loadCloudData();
+  buildDash();
+  updateDashBadge();
+}
+
+// ═══════════════════════════════════════════════════════
+// ONLINE / OFFLINE
+// ═══════════════════════════════════════════════════════
+function onOnline() {
+  isOnline = true;
+  document.getElementById('offline-bar').classList.remove('on');
   flushQueue();
-  initFirmaCanvas();
-  setInterval(checkReminderDot, 60000);
-  window.addEventListener('online',  () => { isOnline=true;  updateOfflineBar(); flushQueue(); showToast('Connessione ripristinata','success'); });
-  window.addEventListener('offline', () => { isOnline=false; updateOfflineBar(); showToast('Modalità offline attivata','warning'); });
+  syncTemperature();
+  showToast('Connessione ripristinata','success');
+}
+function onOffline() {
+  isOnline = false;
+  document.getElementById('offline-bar').classList.add('on');
+  showToast('Modalità offline','warning');
 }
 
-function updateDate() {
-  const now = new Date();
-  document.getElementById('today-date').textContent = now.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
-  const el = document.getElementById('firma-data-display');
-  if (el) el.value = now.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-}
-
-function checkOnline() { isOnline = navigator.onLine; updateOfflineBar(); }
-function updateOfflineBar() { document.getElementById('offline-bar').classList.toggle('visible',!isOnline); }
-
-function loadCfgFields() {
-  document.getElementById('cfg-azienda').value      = aziendaCfg.azienda      || '';
-  document.getElementById('cfg-indirizzo').value    = aziendaCfg.indirizzo    || '';
-  document.getElementById('cfg-responsabile').value = aziendaCfg.responsabile || '';
-}
-function saveCfg() {
-  aziendaCfg = {
-    azienda:      document.getElementById('cfg-azienda').value,
-    indirizzo:    document.getElementById('cfg-indirizzo').value,
-    responsabile: document.getElementById('cfg-responsabile').value
-  };
-  localStorage.setItem('haccp_azienda', JSON.stringify(aziendaCfg));
-}
-
-// ---- TABS ----
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
 function switchTab(id, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -411,17 +633,21 @@ function switchTab(id, el) {
   if (id==='firma')    { updateDate(); renderFirmaScreen(); }
 }
 
-// ---- TOAST ----
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
 function showToast(msg, type='success') {
-  const c = document.getElementById('toast-container');
+  const c = document.getElementById('toast-wrap');
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   t.innerHTML = `<span>${{success:'✓',error:'✕',warning:'⚠'}[type]||'ℹ'}</span> ${msg}`;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3600);
+  setTimeout(() => t.remove(), 3700);
 }
 
-// ---- DEVICES ----
+// ═══════════════════════════════════════════════════════
+// DEVICES
+// ═══════════════════════════════════════════════════════
 function setArea(area, el) {
   currentArea = area;
   document.querySelectorAll('.area-pill').forEach(p => p.classList.remove('active'));
@@ -431,16 +657,24 @@ function setArea(area, el) {
 
 function renderDevices() {
   const list = document.getElementById('device-list');
+  if (!list) return;
   list.innerHTML = '';
   const filtered = config.filter(c => c.area === currentArea);
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="icon">🔧</div><p>Nessun apparecchio in ${currentArea}.<br>Aggiungilo dal tab Setup.</p></div>`;
-    return;
+    list.innerHTML = `<div class="empty-state"><div class="ic">🔧</div><p>Nessun apparecchio in ${currentArea}.<br>Aggiungilo dal tab Setup.</p></div>`;
+    updateQueueInfo(); return;
   }
+  // Calcola ultima temp dal cloud (più aggiornata del localStorage)
+  const today = new Date().toLocaleDateString('it-IT');
+  const todayRows = cloudData.filter(r=>r[0]===today);
   filtered.forEach(item => {
-    const last = lastTemps[item.name];
-    const soglia = item.type==='frigo' ? '+4°C' : '-18°C';
-    const lastLabel = last ? `Ult: <strong>${last.temp}°</strong> ${last.ok?'✓':'⚠'}` : 'Nessuna ril.';
+    // Cerca ultima rilevazione dal cloud
+    const cloudLast = [...todayRows].filter(r=>r[2]===item.name).pop();
+    const last = cloudLast
+      ? { temp: parseFloat(cloudLast[4]), ok: cloudLast[5]==='OK' }
+      : lastTemps[item.name];
+    const soglia   = item.type==='frigo' ? '+4°C' : '-18°C';
+    const lastLabel= last ? `Ult: <strong>${last.temp}°</strong> ${last.ok?'✓':'⚠'}` : 'Nessuna ril.';
     const id = item.name.replace(/[^a-z0-9]/gi,'_');
     const div = document.createElement('div');
     div.className = 'device-row'+(last&&!last.ok?' has-err':'');
@@ -469,12 +703,14 @@ function checkWarn(name, type, el) {
   const id = name.replace(/[^a-z0-9]/gi,'_');
   const w  = document.getElementById('tw-'+id);
   if (!w) return;
-  if (isNaN(v)) { w.classList.remove('visible'); el.classList.remove('warn'); return; }
+  if (isNaN(v)) { w.classList.remove('on'); el.classList.remove('warn'); return; }
   const out = (type==='frigo'&&v>4)||(type==='gelo'&&v>-18);
-  w.classList.toggle('visible',out); el.classList.toggle('warn',out);
+  w.classList.toggle('on',out); el.classList.toggle('warn',out);
 }
 
-// ---- SEND ----
+// ═══════════════════════════════════════════════════════
+// SEND TEMPERATURA
+// ═══════════════════════════════════════════════════════
 async function sendData(name, type, area) {
   const id  = name.replace(/[^a-z0-9]/gi,'_');
   const el  = document.getElementById('inp-'+id);
@@ -482,187 +718,220 @@ async function sendData(name, type, area) {
   if (!el||el.value==='') { showToast('Inserisci una temperatura','warning'); return; }
   const val = parseFloat(el.value);
   if (isNaN(val)) { showToast('Valore non valido','error'); return; }
-  const now = new Date();
+  const now    = new Date();
   const status = (type==='frigo'&&val<=4)||(type==='gelo'&&val<=-18) ? 'OK' : 'ERR';
-  const entry = { date:now.toLocaleDateString('it-IT'), time:now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}), name, type, temp:val.toString(), area, status };
+  const entry  = {
+    date: now.toLocaleDateString('it-IT'),
+    time: now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
+    name, type, temp: val.toString(), area, status
+  };
+  // Salva ultima temp locale
   lastTemps[name] = {temp:val, ok:status==='OK'};
-  localStorage.setItem('haccp_last_temps', JSON.stringify(lastTemps));
+  localStorage.setItem('h_lasttemps', JSON.stringify(lastTemps));
+  // Aggiorna cloudData localmente subito (ottimistico)
+  cloudData.push([entry.date,entry.time,entry.name,entry.type,entry.temp,entry.status,entry.area]);
+
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
   if (isOnline) {
     try {
-      await fetch(G_SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(entry)});
-      showToast(`✓ ${name} · ${val}° registrato`, 'success');
+      await fetch(G,{method:'POST',mode:'no-cors',body:JSON.stringify(entry)});
+      showToast(`✓ ${name} · ${val}° registrato`,'success');
       el.value=''; el.classList.remove('warn');
-      const w = document.getElementById('tw-'+id); if(w) w.classList.remove('visible');
+      const w=document.getElementById('tw-'+id); if(w) w.classList.remove('on');
       if (status==='ERR') setTimeout(()=>openModal(entry), 600);
     } catch(e) { queueEntry(entry); showToast('Salvato offline','warning'); }
   } else { queueEntry(entry); showToast('Salvato offline','warning'); el.value=''; }
-  btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 16 16"><path d="M2 8l12-6-6 12V9L2 8z"/></svg>';
-  renderDevices();
+  btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 16 16"><path d="M2 8l12-6-6 12V9L2 8z"/></svg>';
+  renderDevices(); buildDash(); updateDashBadge();
 }
 
-// ---- QUEUE ----
-function queueEntry(e) { offlineQueue.push(e); localStorage.setItem('haccp_queue',JSON.stringify(offlineQueue)); updateQueueInfo(); }
+// ═══════════════════════════════════════════════════════
+// OFFLINE QUEUE
+// ═══════════════════════════════════════════════════════
+function queueEntry(e) {
+  offlineQueue.push(e);
+  localStorage.setItem('h_queue',JSON.stringify(offlineQueue));
+  updateQueueInfo();
+}
 async function flushQueue() {
   if (!isOnline||!offlineQueue.length) return;
-  const q=[...offlineQueue]; offlineQueue=[]; localStorage.setItem('haccp_queue','[]');
+  const q=[...offlineQueue]; offlineQueue=[];
+  localStorage.setItem('h_queue','[]');
   let ok=0;
-  for (const e of q) { try { await fetch(G_SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(e)}); ok++; } catch(err){offlineQueue.push(e);} }
-  localStorage.setItem('haccp_queue',JSON.stringify(offlineQueue));
+  for (const e of q) {
+    try { await fetch(G,{method:'POST',mode:'no-cors',body:JSON.stringify(e)}); ok++; }
+    catch(err) { offlineQueue.push(e); }
+  }
+  localStorage.setItem('h_queue',JSON.stringify(offlineQueue));
   if (ok>0) showToast(`${ok} rilevazione${ok>1?'i':''} sincronizzata${ok>1?'e':''}`, 'success');
   updateQueueInfo();
 }
 function updateQueueInfo() {
-  const el = document.getElementById('queue-info'); if(!el) return;
-  if (offlineQueue.length>0) { el.textContent=`⏳ ${offlineQueue.length} in coda`; el.classList.add('visible'); }
-  else el.classList.remove('visible');
+  const el=document.getElementById('queue-info'); if(!el) return;
+  if (offlineQueue.length>0) { el.textContent=`⏳ ${offlineQueue.length} in coda per sync`; el.classList.add('on'); }
+  else el.classList.remove('on');
 }
 
-// ---- MODAL AZIONE ----
+// ═══════════════════════════════════════════════════════
+// AZIONE CORRETTIVA MODAL
+// ═══════════════════════════════════════════════════════
 function openModal(entry) {
   modalEntry = entry;
   document.getElementById('modal-sub').textContent = `${entry.name} — ${entry.temp}°C · ${entry.date} ${entry.time}`;
   document.getElementById('action-note').value = '';
   document.getElementById('action-resp').value = aziendaCfg.responsabile||'';
-  const chips = document.getElementById('action-chips'); chips.innerHTML='';
-  AZIONI_PRESET.forEach(a => {
+  const chips=document.getElementById('action-chips'); chips.innerHTML='';
+  AZIONI_PRESET.forEach(a=>{
     const s=document.createElement('span'); s.className='action-chip'; s.textContent=a;
-    s.onclick=()=>s.classList.toggle('selected'); chips.appendChild(s);
+    s.onclick=()=>s.classList.toggle('sel'); chips.appendChild(s);
   });
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 function closeModalBg(e) { if(e.target.id==='modal-overlay') closeModal(); }
 function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); modalEntry=null; }
+
 async function saveAction() {
   if (!modalEntry) return;
-  const sel=[...document.querySelectorAll('.action-chip.selected')].map(c=>c.textContent);
-  const note=document.getElementById('action-note').value.trim();
-  const resp=document.getElementById('action-resp').value.trim();
+  const sel  = [...document.querySelectorAll('.action-chip.sel')].map(c=>c.textContent);
+  const note = document.getElementById('action-note').value.trim();
+  const resp = document.getElementById('action-resp').value.trim();
   if (!sel.length&&!note) { showToast("Seleziona almeno un'azione",'warning'); return; }
-  const now=new Date();
-  const key=`${modalEntry.name}_${modalEntry.date}_${modalEntry.time}`;
-  corrective[key]={azioni:sel, note, responsabile:resp, salvato:now.toLocaleString('it-IT')};
-  localStorage.setItem('haccp_corrective',JSON.stringify(corrective));
+  const now = new Date();
+  const key = `${modalEntry.name}_${modalEntry.date}_${modalEntry.time}`;
+  corrective[key] = { azioni:sel, note, responsabile:resp, salvato:now.toLocaleString('it-IT') };
+  // Push al cloud
   if (isOnline) {
     try {
-      await fetch(G_SCRIPT_URL, {
-        method:'POST', mode:'no-cors',
-        body: JSON.stringify({
-          tipo: 'azione',
-          dateAnomalia: modalEntry.date,
-          timeAnomalia: modalEntry.time,
-          apparecchio:  modalEntry.name,
-          zona:         modalEntry.area || '',
-          tempRilevata: modalEntry.temp,
-          azioni:       sel.join(', '),
-          note,
-          responsabile: resp,
-          salvatoIl:    now.toLocaleString('it-IT')
-        })
-      });
+      await fetch(G,{method:'POST',mode:'no-cors',body:JSON.stringify({
+        tipo:'azione',
+        dateAnomalia: modalEntry.date, timeAnomalia: modalEntry.time,
+        apparecchio: modalEntry.name, zona: modalEntry.area||'',
+        tempRilevata: modalEntry.temp,
+        azioni: sel.join(', '), note, responsabile: resp,
+        salvatoIl: now.toLocaleString('it-IT')
+      })});
     } catch(e) {}
   }
   closeModal(); showToast('Azione correttiva registrata','success'); buildDash();
 }
 
-// ---- CLOUD & DASH ----
-async function loadCloudData() {
-  try {
-    const [rTemp, rAzioni] = await Promise.all([
-      fetch(G_SCRIPT_URL + '?tipo=temperature'),
-      fetch(G_SCRIPT_URL + '?tipo=azioni')
-    ]);
-    cloudData = await rTemp.json();
-    // Merge azioni correttive dal cloud con quelle locali
-    const cloudAzioni = await rAzioni.json();
-    cloudAzioni.slice(1).forEach(r => { // salta intestazione
-      if (!r[0] || r[0]==='Data Anomalia') return;
-      const key = `${r[2]}_${r[0]}_${r[1]}`;
-      if (!corrective[key]) {
-        corrective[key] = {
-          azioni: (r[5]||'').split(', ').filter(Boolean),
-          note: r[6]||'',
-          responsabile: r[7]||'',
-          salvato: r[8]||''
-        };
-      }
-    });
-    localStorage.setItem('haccp_corrective', JSON.stringify(corrective));
-    buildDash(); updateDashBadge(); checkReminderDot();
-  } catch(e) {}
-}
-
+// ═══════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════
 function buildDash() {
-  const today=new Date().toLocaleDateString('it-IT');
-  const rows=cloudData.filter(r=>r[0]&&r[0]===today&&r[5]);
-  const errs=rows.filter(r=>r[5]==='ERR');
-  const okDev=config.filter(c=>{const l=lastTemps[c.name];return l&&l.ok;}).length;
-  document.getElementById('stat-count').textContent=rows.length;
-  document.getElementById('stat-err').textContent=errs.length;
-  document.getElementById('stat-ok').textContent=config.length>0?`${okDev}/${config.length}`:'—';
-  const times=rows.map(r=>r[1]).filter(Boolean);
-  document.getElementById('stat-last').textContent=times.length?times[times.length-1]:'—';
+  const today = new Date().toLocaleDateString('it-IT');
+  const rows  = cloudData.filter(r=>Array.isArray(r)&&r[0]===today&&r[5]);
+  const errs  = rows.filter(r=>r[5]==='ERR');
+  const okDev = config.filter(c=>{
+    const l = [...rows].filter(r=>r[2]===c.name).pop();
+    return l && l[5]==='OK';
+  }).length;
+  document.getElementById('stat-count').textContent = rows.length;
+  document.getElementById('stat-err').textContent   = errs.length;
+  document.getElementById('stat-ok').textContent    = config.length>0 ? `${okDev}/${config.length}` : '—';
+  const times = rows.map(r=>r[1]).filter(Boolean);
+  document.getElementById('stat-last').textContent  = times.length ? times[times.length-1] : '—';
 
-  const ac=document.getElementById('dash-alerts'); ac.innerHTML='';
+  // Alert anomalie
+  const ac = document.getElementById('dash-alerts'); ac.innerHTML='';
   errs.slice(-5).reverse().forEach(r=>{
     const key=`${r[2]}_${r[0]}_${r[1]}`; const hasFix=!!corrective[key];
     ac.innerHTML+=`<div class="alert-banner">
       <div class="alert-dot"></div>
-      <div class="alert-text"><strong>${r[2]}</strong> (${r[6]||''}) — ${r[4]}°C alle ${r[1]}${hasFix?'<br><span style="color:var(--green)">✓ Azione correttiva registrata</span>':''}</div>
+      <div class="alert-text"><strong>${r[2]}</strong> (${r[6]||''}) — ${r[4]}°C alle ${r[1]}
+        ${hasFix?'<br><span style="color:var(--green);font-size:11px;">✓ Azione correttiva registrata</span>':''}
+      </div>
       ${!hasFix?`<button class="fix-btn" onclick='openModal({name:"${r[2]}",temp:"${r[4]}",date:"${r[0]}",time:"${r[1]}",area:"${r[6]||""}"})'>+ Azione</button>`:''}
     </div>`;
   });
 
-  const rec=document.getElementById('dash-recent');
-  const sorted=[...rows].reverse().slice(0,6);
-  if (!sorted.length){rec.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>Nessuna rilevazione oggi.</p></div>';return;}
-  rec.innerHTML=sorted.map(r=>`<div class="hist-item">
+  // Ultime rilevazioni
+  const rec = document.getElementById('dash-recent');
+  const sorted = [...rows].reverse().slice(0,6);
+  if (!sorted.length) { rec.innerHTML='<div class="empty-state"><div class="ic">📋</div><p>Nessuna rilevazione oggi.</p></div>'; return; }
+  rec.innerHTML = sorted.map(r=>`<div class="hist-item">
     <div><div class="hist-name">${r[2]||''}</div><div class="hist-meta">${r[6]||''} · ${r[1]||''}</div></div>
-    <div class="hist-right"><div class="hist-temp" style="color:${r[5]==='OK'?'var(--green)':'var(--red)'}">${r[4]||''}°</div><span class="badge ${r[5]==='OK'?'badge-ok':'badge-err'}">${r[5]||''}</span></div>
+    <div class="hist-right">
+      <div class="hist-temp" style="color:${r[5]==='OK'?'var(--green)':'var(--red)'}">${r[4]||''}°</div>
+      <span class="badge ${r[5]==='OK'?'badge-ok':'badge-err'}">${r[5]||''}</span>
+    </div>
   </div>`).join('');
 }
 
 function updateDashBadge() {
-  const today=new Date().toLocaleDateString('it-IT');
-  const rows=cloudData.filter(r=>r[0]===today&&r[5]);
-  const errs=rows.filter(r=>r[5]==='ERR').length;
-  const badge=document.getElementById('top-badge');
-  badge.textContent=rows.length?`${rows.length-errs} OK · ${errs} ERR`:'Nessuna ril.';
-  badge.classList.toggle('has-err',errs>0);
+  const today = new Date().toLocaleDateString('it-IT');
+  const rows  = cloudData.filter(r=>Array.isArray(r)&&r[0]===today&&r[5]);
+  const errs  = rows.filter(r=>r[5]==='ERR').length;
+  const badge = document.getElementById('top-badge');
+  badge.textContent = rows.length ? `${rows.length-errs} OK · ${errs} ERR` : 'Nessuna ril.';
+  badge.classList.toggle('has-err', errs>0);
 }
 
-// ---- SCHEDULE ----
+// ═══════════════════════════════════════════════════════
+// SCHEDULE / PROMEMORIA
+// ═══════════════════════════════════════════════════════
 function renderScheduleConfig() {
-  const el=document.getElementById('schedule-slots'); el.innerHTML='';
+  const el = document.getElementById('schedule-slots'); if(!el) return;
+  el.innerHTML='';
   scheduleSlots.forEach((s,i)=>{
     const d=document.createElement('div'); d.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;';
-    d.innerHTML=`<span style="font-size:14px;font-weight:700;color:var(--navy);min-width:52px;">${s.time}</span><span style="font-size:13px;flex:1;">${s.label}</span><button onclick="deleteSlot(${i})" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px;font-family:inherit;">✕</button>`;
+    d.innerHTML=`<span style="font-size:14px;font-weight:700;color:var(--navy);min-width:50px;">${s.time}</span>
+      <span style="font-size:13px;flex:1;">${s.label}</span>
+      <button onclick="deleteSlot(${i})" style="background:none;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;font-family:inherit;">✕</button>`;
     el.appendChild(d);
   });
   renderScheduleToday();
 }
 
+function renderScheduleSlotsSetup() {
+  const el = document.getElementById('schedule-slots-setup'); if(!el) return;
+  el.innerHTML='';
+  scheduleSlots.forEach((s,i)=>{
+    const d=document.createElement('div'); d.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    d.innerHTML=`<span style="font-size:13px;font-weight:700;color:var(--navy);min-width:50px;">${s.time}</span>
+      <span style="font-size:13px;flex:1;">${s.label}</span>
+      <button onclick="deleteSlotSetup(${i})" style="background:none;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;font-family:inherit;">✕</button>`;
+    el.appendChild(d);
+  });
+}
+
 function addSlot() {
   const t=document.getElementById('new-slot-time').value;
   const l=document.getElementById('new-slot-label').value.trim();
-  if (!t) { showToast('Inserisci un orario','warning'); return; }
+  if(!t){showToast('Inserisci un orario','warning');return;}
   scheduleSlots.push({time:t,label:l||t});
   scheduleSlots.sort((a,b)=>a.time.localeCompare(b.time));
-  localStorage.setItem('haccp_schedule',JSON.stringify(scheduleSlots));
+  localStorage.setItem('h_schedule',JSON.stringify(scheduleSlots));
   document.getElementById('new-slot-time').value='';
   document.getElementById('new-slot-label').value='';
   renderScheduleConfig(); checkReminderDot();
 }
 
+function addSlotSetup() {
+  const t=document.getElementById('new-slot-time2').value;
+  const l=document.getElementById('new-slot-label2').value.trim();
+  if(!t){showToast('Inserisci un orario','warning');return;}
+  scheduleSlots.push({time:t,label:l||t});
+  scheduleSlots.sort((a,b)=>a.time.localeCompare(b.time));
+  localStorage.setItem('h_schedule',JSON.stringify(scheduleSlots));
+  document.getElementById('new-slot-time2').value='';
+  document.getElementById('new-slot-label2').value='';
+  renderScheduleSlotsSetup(); checkReminderDot();
+}
+
 function deleteSlot(i) {
-  scheduleSlots.splice(i,1); localStorage.setItem('haccp_schedule',JSON.stringify(scheduleSlots));
+  scheduleSlots.splice(i,1); localStorage.setItem('h_schedule',JSON.stringify(scheduleSlots));
   renderScheduleConfig(); checkReminderDot();
+}
+function deleteSlotSetup(i) {
+  scheduleSlots.splice(i,1); localStorage.setItem('h_schedule',JSON.stringify(scheduleSlots));
+  renderScheduleSlotsSetup(); checkReminderDot();
 }
 
 function renderScheduleToday() {
   const now=new Date(); const nowMin=now.getHours()*60+now.getMinutes();
   const today=now.toLocaleDateString('it-IT');
-  const rows=cloudData.filter(r=>r[0]===today);
+  const rows=cloudData.filter(r=>Array.isArray(r)&&r[0]===today);
   const el=document.getElementById('schedule-today'); if(!el) return;
   el.innerHTML='';
   if (!scheduleSlots.length){el.innerHTML='<div class="empty-state"><p>Nessuna sessione configurata.</p></div>';return;}
@@ -674,11 +943,12 @@ function renderScheduleToday() {
     if(done){cls='done';badge='<span class="badge badge-ok">Completata</span>';}
     else if(isPast){cls='overdue';badge='<span class="badge badge-err">In ritardo</span>';}
     else if(isClose){badge='<span class="badge badge-fix">Prossima</span>';}
-    else{badge='<span class="badge" style="background:var(--gray-bg);color:var(--text-muted);">Pianificata</span>';}
+    else{badge='<span class="badge badge-gray">Pianificata</span>';}
     el.innerHTML+=`<div class="schedule-row ${cls}">
       <div class="schedule-time">${s.time}</div>
-      <div><div class="schedule-label">${s.label}</div><div class="schedule-sub">${done?'✓ Rilevazioni registrate':'Tutte le zone'}</div></div>
-      <div class="schedule-status">${badge}</div>
+      <div><div style="font-size:13px;font-weight:500;">${s.label}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${done?'✓ Rilevazioni registrate':'Tutte le zone'}</div></div>
+      <div style="margin-left:auto;">${badge}</div>
     </div>`;
   });
 }
@@ -686,18 +956,21 @@ function renderScheduleToday() {
 function checkReminderDot() {
   const now=new Date(); const nowMin=now.getHours()*60+now.getMinutes();
   const today=now.toLocaleDateString('it-IT');
-  const rows=cloudData.filter(r=>r[0]===today);
+  const rows=cloudData.filter(r=>Array.isArray(r)&&r[0]===today);
   const late=scheduleSlots.some(s=>{
     const[hh,mm]=s.time.split(':').map(Number); const slotMin=hh*60+mm;
     if(slotMin>=nowMin) return false;
     return !rows.some(r=>{if(!r[1])return false;const[rh,rm]=r[1].split(':').map(Number);return Math.abs((rh*60+rm)-slotMin)<=45;});
   });
-  const dot=document.getElementById('rdot'); if(dot) dot.classList.toggle('visible',late);
+  const dot=document.getElementById('rdot'); if(dot) dot.classList.toggle('on',late);
 }
 
-// ---- FIRMA ----
+// ═══════════════════════════════════════════════════════
+// FIRMA
+// ═══════════════════════════════════════════════════════
 function initFirmaCanvas() {
   firmaCanvas=document.getElementById('firma-canvas');
+  if(!firmaCanvas) return;
   firmaCtx=firmaCanvas.getContext('2d');
   firmaCtx.strokeStyle='#1A3A5C'; firmaCtx.lineWidth=2.5; firmaCtx.lineCap='round'; firmaCtx.lineJoin='round';
   const pos=(e,c)=>{const r=c.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(c.width/r.width),y:(s.clientY-r.top)*(c.height/r.height)};};
@@ -710,8 +983,8 @@ function initFirmaCanvas() {
 }
 
 function clearFirma() {
-  firmaCtx.clearRect(0,0,firmaCanvas.width,firmaCanvas.height);
-  document.getElementById('firma-saved-msg').classList.remove('visible');
+  if(firmaCtx) firmaCtx.clearRect(0,0,firmaCanvas.width,firmaCanvas.height);
+  document.getElementById('firma-saved-msg').classList.remove('on');
 }
 
 async function saveFirma() {
@@ -719,59 +992,61 @@ async function saveFirma() {
   if(!nome){showToast("Inserisci il nome dell'operatore",'warning');return;}
   const now=new Date(); const todayKey=now.toLocaleDateString('it-IT');
   const dataUrl=firmaCanvas.toDataURL();
-  const stored=JSON.parse(localStorage.getItem('haccp_firme_oggi'))||{};
-  if(!stored[todayKey]) stored[todayKey]=[];
-  stored[todayKey].push({nome, data:now.toLocaleString('it-IT'), dataUrl});
-  localStorage.setItem('haccp_firme_oggi',JSON.stringify(stored));
-  document.getElementById('firma-saved-msg').classList.add('visible');
+  const entry={nome, data:now.toLocaleString('it-IT'), dataUrl};
+  // Aggiungi a cloudFirme localmente
+  cloudFirme.push([todayKey, now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}), nome, dataUrl]);
+  localStorage.setItem('h_firme',JSON.stringify(cloudFirme));
+  document.getElementById('firma-saved-msg').classList.add('on');
+  // Push al cloud
   if (isOnline) {
     try {
-      await fetch(G_SCRIPT_URL, {
-        method:'POST', mode:'no-cors',
-        body: JSON.stringify({
-          tipo:        'firma',
-          data:        todayKey,
-          ora:         now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
-          operatore:   nome,
-          firmaBase64: dataUrl
-        })
-      });
-    } catch(e) {}
+      await fetch(G,{method:'POST',mode:'no-cors',body:JSON.stringify({
+        tipo:'firma', data:todayKey,
+        ora:now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
+        operatore:nome, firmaBase64:dataUrl
+      })});
+    } catch(e){}
   }
   showToast(`Firma di ${nome} salvata`,'success');
   clearFirma(); renderFirmaScreen();
 }
 
 function renderFirmaScreen() {
+  // Chips operatori
   const chips=document.getElementById('operatori-chips'); if(!chips)return;
   chips.innerHTML='';
   operatori.forEach(op=>{
     const s=document.createElement('span'); s.className='operatore-chip'; s.textContent=op;
-    s.onclick=()=>{document.querySelectorAll('.operatore-chip').forEach(c=>c.classList.remove('selected'));s.classList.add('selected');document.getElementById('firma-nome-input').value=op;};
+    s.onclick=()=>{document.querySelectorAll('.operatore-chip').forEach(c=>c.classList.remove('sel'));s.classList.add('sel');document.getElementById('firma-nome-input').value=op;};
     chips.appendChild(s);
   });
+  // Lista firme di oggi dal cloud
   const list=document.getElementById('firme-list'); if(!list)return;
-  const todayKey=new Date().toLocaleDateString('it-IT');
-  const stored=JSON.parse(localStorage.getItem('haccp_firme_oggi'))||{};
-  const firme=stored[todayKey]||[];
-  if(!firme.length){list.innerHTML='<div class="empty-state"><div class="icon">✍️</div><p>Nessuna firma registrata oggi.</p></div>';return;}
-  list.innerHTML=firme.map(f=>`<div class="card" style="padding:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <div><div style="font-size:13px;font-weight:700;">${f.nome}</div><div style="font-size:11px;color:var(--text-muted);">${f.data}</div></div>
+  const today=new Date().toLocaleDateString('it-IT');
+  const firmeOggi = cloudFirme.filter(r=>Array.isArray(r)&&r[0]===today&&r[2]);
+  if(!firmeOggi.length){list.innerHTML='<div class="empty-state"><div class="ic">✍️</div><p>Nessuna firma oggi.</p></div>';return;}
+  list.innerHTML=firmeOggi.map(f=>`<div class="card" style="padding:11px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+      <div><div style="font-size:13px;font-weight:700;">${f[2]}</div><div style="font-size:11px;color:var(--text-muted);">${f[0]} ${f[1]||''}</div></div>
       <span class="badge badge-ok">Firmato</span>
     </div>
-    <img src="${f.dataUrl}" style="width:100%;height:60px;object-fit:contain;border:1px solid var(--border);border-radius:6px;background:white;">
+    ${f[3]?`<img src="${f[3]}" style="width:100%;height:55px;object-fit:contain;border:1px solid var(--border);border-radius:6px;background:#fff;">`:''}
   </div>`).join('');
 }
 
-// ---- SETUP ----
+// ═══════════════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════════════
 function renderSetup() {
   const list=document.getElementById('setup-list'); if(!list)return; list.innerHTML='';
-  if(!config.length){list.innerHTML='<div class="empty-state"><p>Nessun apparecchio configurato.</p></div>';return;}
+  if(!config.length){list.innerHTML='<div class="empty-state" style="padding:10px 0;"><p>Nessun apparecchio.</p></div>';return;}
+  const icons={frigo:'❄️',gelo:'🧊'};
+  const areaNames={CUCINA:'Cucina',BAR:'Bar',RISTORANTE:'Ristorante'};
   config.forEach((c,i)=>{
     const d=document.createElement('div'); d.className='setup-item';
-    d.innerHTML=`<div class="device-icon ${c.type}">${c.type==='frigo'?'❄️':'🧊'}</div>
-      <div class="setup-info"><div class="name">${c.name}</div><div class="sub">${c.type==='frigo'?'Frigo (+4°C)':'Gelo (-18°C)'} · ${{CUCINA:'Cucina',BAR:'Bar',RISTORANTE:'Ristorante'}[c.area]||c.area}</div></div>
+    d.innerHTML=`<div class="device-icon ${c.type}">${icons[c.type]||'❄️'}</div>
+      <div class="setup-info"><div class="name">${c.name}</div>
+        <div class="sub">${c.type==='frigo'?'Frigo (+4°C)':'Gelo (-18°C)'} · ${areaNames[c.area]||c.area}</div></div>
       <button class="del-btn" onclick="deleteDevice(${i})">✕</button>`;
     list.appendChild(d);
   });
@@ -782,41 +1057,56 @@ function addDevice() {
   if(!name){showToast('Inserisci un nome','warning');return;}
   if(config.find(c=>c.name===name)){showToast('Nome già usato','error');return;}
   config.push({name,type:document.getElementById('new-type').value,area:document.getElementById('new-area').value});
-  localStorage.setItem('haccp_config_v3',JSON.stringify(config));
+  localStorage.setItem('h_config',JSON.stringify(config));
   document.getElementById('new-name').value='';
-  renderSetup(); renderDevices(); showToast(`${name} aggiunto`,'success');
+  renderSetup(); renderDevices();
+  showToast(`${name} aggiunto — premi ☁ Sincronizza per condividerlo`,'success');
 }
 
 function deleteDevice(i) {
-  const n=config[i]?.name; config.splice(i,1); localStorage.setItem('haccp_config_v3',JSON.stringify(config));
-  renderSetup(); renderDevices(); showToast(`${n} rimosso`,'success');
+  const n=config[i]?.name; config.splice(i,1); localStorage.setItem('h_config',JSON.stringify(config));
+  renderSetup(); renderDevices(); showToast(`${n} rimosso — premi ☁ Sincronizza`,'success');
 }
 
 function renderOperatoriSetup() {
   const list=document.getElementById('operatori-setup-list'); if(!list)return; list.innerHTML='';
-  if(!operatori.length){list.innerHTML='<div class="empty-state" style="padding:10px 0;"><p>Nessun operatore configurato.</p></div>';return;}
+  if(!operatori.length){list.innerHTML='<div class="empty-state" style="padding:10px 0;"><p>Nessun operatore.</p></div>';return;}
   operatori.forEach((op,i)=>{
     const d=document.createElement('div'); d.className='setup-item';
-    d.innerHTML=`<span style="font-size:16px;">👤</span><div class="setup-info"><div class="name">${op}</div></div><button class="del-btn" onclick="deleteOperatore(${i})">✕</button>`;
+    d.innerHTML=`<span style="font-size:16px;">👤</span>
+      <div class="setup-info"><div class="name">${op}</div></div>
+      <button class="del-btn" onclick="deleteOperatore(${i})">✕</button>`;
     list.appendChild(d);
   });
 }
 
 function addOperatore() {
   const v=document.getElementById('new-operatore').value.trim(); if(!v)return;
-  if(!operatori.includes(v)){operatori.push(v);localStorage.setItem('haccp_operatori',JSON.stringify(operatori));}
+  if(!operatori.includes(v)){operatori.push(v);localStorage.setItem('h_operatori',JSON.stringify(operatori));}
   document.getElementById('new-operatore').value='';
-  renderOperatoriSetup(); renderFirmaScreen(); showToast(`${v} aggiunto`,'success');
+  renderOperatoriSetup(); renderFirmaScreen();
+  showToast(`${v} aggiunto — premi ☁ Sincronizza`,'success');
 }
 
 function deleteOperatore(i) {
-  operatori.splice(i,1); localStorage.setItem('haccp_operatori',JSON.stringify(operatori));
+  operatori.splice(i,1); localStorage.setItem('h_operatori',JSON.stringify(operatori));
   renderOperatoriSetup(); renderFirmaScreen();
 }
 
-// ---- HISTORY ----
+function saveCfgLocal() {
+  aziendaCfg = {
+    azienda:      document.getElementById('cfg-azienda').value,
+    indirizzo:    document.getElementById('cfg-indirizzo').value,
+    responsabile: document.getElementById('cfg-responsabile').value
+  };
+  localStorage.setItem('h_azienda',JSON.stringify(aziendaCfg));
+}
+
+// ═══════════════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════════════
 function setupMonthFilter() {
-  const sel=document.getElementById('filter-month');
+  const sel=document.getElementById('filter-month'); if(!sel)return;
   const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   const now=new Date();
   for(let i=0;i<12;i++){const o=document.createElement('option');o.value=(i+1).toString().padStart(2,'0');o.text=months[i];if(i===now.getMonth())o.selected=true;sel.appendChild(o);}
@@ -826,7 +1116,9 @@ function updateDeviceFilter() {
   const area=document.getElementById('filter-area').value;
   const ds=document.getElementById('filter-device');
   ds.innerHTML='<option value="ALL">Tutti i dispositivi</option>';
-  [...new Set(config.filter(c=>area==='ALL'||c.area===area).map(c=>c.name))].forEach(d=>{const o=document.createElement('option');o.value=d;o.text=d;ds.appendChild(o);});
+  [...new Set(config.filter(c=>area==='ALL'||c.area===area).map(c=>c.name))].forEach(d=>{
+    const o=document.createElement('option');o.value=d;o.text=d;ds.appendChild(o);
+  });
   renderHistory();
 }
 
@@ -844,7 +1136,7 @@ function getFiltered() {
   const aF=document.getElementById('filter-area').value;
   const dF=document.getElementById('filter-device').value;
   return cloudData.filter(r=>{
-    if(!r[0]||r[0]==='Data'||r[0].includes('Data'))return false;
+    if(!Array.isArray(r)||!r[0]||r[0]==='Data'||r[0].includes('Data'))return false;
     const p=r[0].split('/'); if(p.length<2)return false;
     return p[1]===mF&&(aF==='ALL'||r[6]===aF)&&(dF==='ALL'||r[2]===dF)&&(!onlyErr||r[5]==='ERR');
   });
@@ -853,7 +1145,9 @@ function getFiltered() {
 function renderHistory() {
   const data=getFiltered().reverse();
   const body=document.getElementById('history-body');
-  document.getElementById('history-count').textContent=`${data.length} righe`;
+  const count=document.getElementById('history-count');
+  if(!body)return;
+  count.textContent=`${data.length} righe`;
   body.innerHTML='';
   if(!data.length){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Nessun dato trovato</td></tr>';return;}
   data.forEach(r=>{
@@ -862,12 +1156,16 @@ function renderHistory() {
       <td>${r[0]||''}<br><span style="color:var(--text-muted);font-size:10px;">${r[1]||''}</span></td>
       <td>${r[2]||''}<br><span style="color:var(--text-muted);font-size:10px;">${r[6]||''}</span></td>
       <td style="font-weight:700;color:${ok?'var(--green)':'var(--red)'};">${r[4]||''}°</td>
-      <td><span class="badge ${ok?'badge-ok':'badge-err'}">${r[5]||''}</span>${!ok&&hasFix?'<br><span class="badge badge-fix" style="margin-top:3px;display:inline-block;">Fix ✓</span>':''}</td>
+      <td><span class="badge ${ok?'badge-ok':'badge-err'}">${r[5]||''}</span>
+        ${!ok&&hasFix?'<br><span class="badge badge-fix" style="margin-top:3px;display:inline-block;">Fix ✓</span>':''}
+      </td>
     </tr>`;
   });
 }
 
-// ---- EXPORT EXCEL ----
+// ═══════════════════════════════════════════════════════
+// EXPORT EXCEL
+// ═══════════════════════════════════════════════════════
 function exportExcel() {
   const data=getFiltered(); if(!data.length){showToast('Nessun dato','warning');return;}
   const mName=document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
@@ -881,13 +1179,15 @@ function exportExcel() {
   XLSX.writeFile(wb,`HACCP_${mName.replace(/\s/g,'_')}.xlsx`);
 }
 
-// ---- EXPORT PDF ----
+// ═══════════════════════════════════════════════════════
+// EXPORT PDF
+// ═══════════════════════════════════════════════════════
 function exportPDF() {
   const data=getFiltered(); if(!data.length){showToast('Nessun dato','warning');return;}
   const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const mName=document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
   const aName=document.getElementById('filter-area').options[document.getElementById('filter-area').selectedIndex].text;
-  const W=210, M=14;
+  const W=210,M=14;
 
   // Header
   doc.setFillColor(26,58,92); doc.rect(0,0,W,30,'F');
@@ -897,28 +1197,21 @@ function exportPDF() {
   doc.setFontSize(8.5); doc.setFont('helvetica','normal');
   doc.text(`${aziendaCfg.azienda||'[Nome azienda]'}  ·  ${aziendaCfg.indirizzo||'[Indirizzo]'}`,M,19);
   doc.text(`Responsabile: ${aziendaCfg.responsabile||'[Nome]'}  ·  Periodo: ${mName}  ·  Zona: ${aName}`,M,25);
-
-  // Generato il
   doc.setTextColor(80,80,80); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
   doc.text(`Generato il ${new Date().toLocaleString('it-IT')}  ·  Rif. Reg. CE 852/2004`,M,36);
 
-  // KPI boxes
+  // KPI
   const errs=data.filter(r=>r[5]==='ERR').length;
   const fixed=data.filter(r=>!!corrective[`${r[2]}_${r[0]}_${r[1]}`]).length;
-  const boxes=[
-    {label:'Totale',val:data.length,c:[26,58,92]},
-    {label:'Conformi',val:data.length-errs,c:[26,122,74]},
-    {label:'Non conformi',val:errs,c:[192,57,43]},
-    {label:'Con azione',val:fixed,c:[133,79,11]}
-  ];
-  const bw=43, bh=16, by=40;
-  boxes.forEach((b,i)=>{
-    const x=M+i*(bw+3.3);
-    doc.setFillColor(...b.c); doc.roundedRect(x,by,bw,bh,2,2,'F');
+  [{label:'Totale',val:data.length,c:[26,58,92]},{label:'Conformi',val:data.length-errs,c:[26,122,74]},
+   {label:'Non conformi',val:errs,c:[192,57,43]},{label:'Con azione',val:fixed,c:[133,79,11]}
+  ].forEach((b,i)=>{
+    const x=M+i*46;
+    doc.setFillColor(...b.c); doc.roundedRect(x,40,43,16,2,2,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont('helvetica','bold');
-    doc.text(String(b.val),x+bw/2,by+9.5,{align:'center'});
+    doc.text(String(b.val),x+21.5,49.5,{align:'center'});
     doc.setFontSize(6); doc.setFont('helvetica','normal');
-    doc.text(b.label,x+bw/2,by+13.5,{align:'center'});
+    doc.text(b.label,x+21.5,53.5,{align:'center'});
   });
 
   // Tabella
@@ -943,15 +1236,13 @@ function exportPDF() {
     }
   });
 
-  // Sezione firme
+  // Firme
   let y=doc.lastAutoTable.finalY+10;
   if(y>245){doc.addPage();y=20;}
   doc.setFillColor(26,58,92); doc.rect(M,y,W-M*2,7,'F');
   doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
   doc.text('FIRME RESPONSABILI',M+2,y+5); y+=12;
-
-  const stored=JSON.parse(localStorage.getItem('haccp_firme_oggi'))||{};
-  const allFirme=Object.values(stored).flat();
+  const allFirme=cloudFirme.filter(r=>Array.isArray(r)&&r[2]);
   if(!allFirme.length){
     doc.setTextColor(120,120,120); doc.setFontSize(8); doc.setFont('helvetica','italic');
     doc.text('Nessuna firma digitale registrata.',M,y+5); y+=14;
@@ -959,12 +1250,11 @@ function exportPDF() {
     allFirme.forEach(f=>{
       if(y>262){doc.addPage();y=20;}
       doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
-      doc.text(f.nome,M,y+5);
+      doc.text(f[2],M,y+5);
       doc.setFont('helvetica','normal'); doc.setTextColor(110,110,110); doc.setFontSize(7.5);
-      doc.text(f.data,M,y+10);
-      try{doc.addImage(f.dataUrl,'PNG',W-M-58,y,58,18);}catch(e){}
-      doc.setDrawColor(210,210,210); doc.line(M,y+24,W-M,y+24);
-      y+=28;
+      doc.text(`${f[0]} ${f[1]||''}`,M,y+10);
+      if(f[3]){try{doc.addImage(f[3],'PNG',W-M-58,y,58,18);}catch(e){}}
+      doc.setDrawColor(210,210,210); doc.line(M,y+24,W-M,y+24); y+=28;
     });
   }
 
@@ -977,11 +1267,24 @@ function exportPDF() {
     doc.text(`HACCP Pro Cloud · ${aziendaCfg.azienda||''} · Reg. CE 852/2004`,M,291.5);
     doc.text(`Pag. ${p}/${pages}`,W-M,291.5,{align:'right'});
   }
-
   doc.save(`HACCP_${mName.replace(/\s/g,'_')}.pdf`);
   showToast('PDF generato','success');
 }
 
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function updateDate() {
+  const now=new Date();
+  const el=document.getElementById('today-date');
+  if(el) el.textContent=now.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  const fd=document.getElementById('firma-data-display');
+  if(fd) fd.value=now.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════════
 init();
 </script>
 </body>
