@@ -549,9 +549,12 @@ function loadConfigLocal() {
 async function pullTemperature() {
   try {
     const r = await fetch(G + '?tipo=temperature');
-    cloudData = await r.json();
+    const data = await r.json();
+    cloudData = Array.isArray(data) ? data : [];
   } catch(e) {
-    cloudData = JSON.parse(localStorage.getItem('h_clouddata')) || [];
+    const saved = localStorage.getItem('h_clouddata');
+    try { cloudData = JSON.parse(saved) || []; } catch(e2) { cloudData = []; }
+    if (!Array.isArray(cloudData)) cloudData = [];
   }
 }
 
@@ -706,6 +709,8 @@ function renderDevices() {
     updateQueueInfo(); return;
   }
 
+  if (!Array.isArray(cloudData)) cloudData = [];
+  if (!Array.isArray(config)) config = [];
   const today = new Date().toLocaleDateString('it-IT');
   const todayRows = cloudData.filter(r => r[0] === today);
 
@@ -923,6 +928,8 @@ async function saveAction() {
 // DASHBOARD
 // ═══════════════════════════════════════════════════════
 function buildDash() {
+  if (!Array.isArray(cloudData)) cloudData = [];
+  if (!Array.isArray(config)) config = [];
   const today = new Date().toLocaleDateString('it-IT');
   const rows  = cloudData.filter(r=>Array.isArray(r)&&r[0]===today&&r[5]);
   const errs  = rows.filter(r=>r[5]==='ERR');
