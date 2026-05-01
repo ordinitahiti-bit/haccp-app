@@ -165,6 +165,27 @@ textarea { resize:vertical; min-height:68px; }
 @keyframes slideUp  { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
 @keyframes fadeOut  { to{opacity:0} }
 
+
+/* ── LOGIN ── */
+#login-screen { position:fixed; inset:0; background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:1000; color:#fff; padding:28px; gap:0; }
+#login-screen h2 { font-size:22px; font-weight:800; margin-bottom:4px; }
+#login-screen p  { font-size:13px; opacity:.6; margin-bottom:28px; }
+.login-card { background:rgba(255,255,255,.08); border-radius:14px; padding:24px; width:100%; max-width:360px; display:flex; flex-direction:column; gap:14px; }
+.login-card label { font-size:11px; font-weight:700; opacity:.7; text-transform:uppercase; letter-spacing:.06em; }
+.login-card select, .login-card input { width:100%; padding:12px 14px; border-radius:8px; border:none; font-size:15px; font-family:inherit; background:rgba(255,255,255,.12); color:#fff; outline:none; }
+.login-card select option { background:#1A3A5C; color:#fff; }
+.login-card input::placeholder { opacity:.45; }
+.login-btn { padding:14px; background:#2E6DA4; color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; margin-top:4px; transition:background .15s; }
+.login-btn:hover { background:#3a82c4; }
+.login-err { color:#ff8a8a; font-size:12px; text-align:center; min-height:16px; }
+/* ── STATO SALVATAGGIO ── */
+.save-status { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; }
+.save-status.ok     { background:var(--green-light); color:var(--green); }
+.save-status.pend   { background:var(--amber-light); color:var(--amber); }
+.save-status.err    { background:var(--red-light);   color:var(--red); }
+/* ── OPERATORE BADGE ── */
+#operatore-badge { font-size:11px; opacity:.75; cursor:pointer; text-decoration:underline; }
+
 /* ── MISC ── */
 .offline-bar { background:var(--amber-light); border-bottom:1px solid #f5c185; padding:7px 14px; font-size:11px; font-weight:600; color:var(--amber); display:none; text-align:center; }
 .offline-bar.on { display:block; }
@@ -178,6 +199,24 @@ textarea { resize:vertical; min-height:68px; }
 </style>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <h2>🔐 HACCP Pro</h2>
+  <p>Accedi per continuare</p>
+  <div class="login-card">
+    <div>
+      <label>Operatore</label>
+      <select id="login-user"></select>
+    </div>
+    <div>
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" onclick="doLogin()">Accedi →</button>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div id="loading-screen">
@@ -193,7 +232,7 @@ textarea { resize:vertical; min-height:68px; }
   <div class="topbar-row">
     <div>
       <h1>HACCP Pro Cloud</h1>
-      <p><span class="online-dot"></span><span id="today-date"></span></p>
+      <p><span class="online-dot"></span><span id="today-date"></span> &nbsp;<span id="operatore-badge" onclick="doLogout()"></span></p>
     </div>
     <span class="top-badge" id="top-badge">—</span>
   </div>
@@ -379,6 +418,16 @@ textarea { resize:vertical; min-height:68px; }
   </div>
 
   <div class="separator"></div>
+  <div class="section-title">Gestione Password</div>
+  <div class="card" id="password-mgmt">
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Imposta o cambia la password di un operatore (min. 6 caratteri)</p>
+    <div class="field"><label>Operatore</label><select id="pwd-user-sel"></select></div>
+    <div class="field"><label>Nuova password</label><input type="password" id="pwd-new" placeholder="min. 6 caratteri"></div>
+    <div class="field"><label>Conferma password</label><input type="password" id="pwd-confirm" placeholder="ripeti password"></div>
+    <button onclick="savePassword()" style="width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">💾 Salva password</button>
+  </div>
+
+  <div class="separator"></div>
   <div class="section-title">Zona pericolosa</div>
   <div style="display:flex;flex-direction:column;gap:10px;">
     <button onclick="resetRegistrazioni()" style="width:100%;padding:13px;background:#e53935;color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-size:14px;font-family:inherit;">
@@ -442,6 +491,7 @@ let lastTemps     = JSON.parse(localStorage.getItem('h_lasttemps')) || {};
 let offlineQueue  = JSON.parse(localStorage.getItem('h_queue'))     || [];
 let corrective    = {};   // merge locale+cloud
 let currentArea   = 'CUCINA';
+let currentOperatore = null; // operatore loggato
 let onlyErr       = false;
 let isOnline      = navigator.onLine;
 let modalEntry    = null;
@@ -452,19 +502,104 @@ let firmaCanvas, firmaCtx, drawing = false;
 // ═══════════════════════════════════════════════════════
 function safeArr(key){try{const v=JSON.parse(localStorage.getItem(key));return Array.isArray(v)?v:[];}catch(e){return [];}}
 async function init() {
+  // Prima carica config (serve per avere la lista operatori nel login)
   setLoadingMsg('Connessione al cloud...');
   navigator.onLine ? await syncAll() : loadFromLocal();
   hideLoading();
   setupMonthFilter();
   updateDate();
   applyConfig();
-  renderAll();
+
+  // Mostra login (salta se sessione valida)
+  const hasSession = await checkSession();
+  if (!hasSession) showLoginScreen();
+  else renderAll();
+
   initFirmaCanvas();
   checkReminderDot();
   setInterval(checkReminderDot, 60000);
-  setInterval(() => { if(isOnline) syncTemperature(); }, 120000); // refresh ogni 2 min
+  setInterval(() => { if(isOnline) syncTemperature(); }, 120000);
   window.addEventListener('online',  onOnline);
   window.addEventListener('offline', onOffline);
+}
+
+// ── LOGIN ─────────────────────────────────────────────────
+function showLoginScreen() {
+  const sel = document.getElementById('login-user');
+  sel.innerHTML = '';
+  // Admin sempre presente
+  const adminOpt = document.createElement('option');
+  adminOpt.value = 'Admin';
+  adminOpt.textContent = 'Admin';
+  sel.appendChild(adminOpt);
+  operatori.forEach(op => {
+    const opt = document.createElement('option');
+    opt.value = op;
+    opt.textContent = op;
+    sel.appendChild(opt);
+  });
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+
+async function doLogin() {
+  const user = document.getElementById('login-user').value;
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-err');
+
+  if (!pass) { err.textContent = 'Inserisci la password'; return; }
+
+  // Hash SHA-256 della password
+  const hash = await sha256(pass);
+
+  // Recupera password salvate
+  const passwords = JSON.parse(localStorage.getItem('h_passwords') || '{}');
+
+  // Prima volta: Admin con password 'haccp2024' di default se non impostata
+  if (user === 'Admin' && !passwords['Admin']) {
+    const defaultHash = await sha256('haccp2024');
+    if (hash !== defaultHash) { err.textContent = 'Password errata'; return; }
+  } else {
+    if (!passwords[user]) { err.textContent = 'Nessuna password impostata per questo operatore'; return; }
+    if (hash !== passwords[user]) { err.textContent = 'Password errata'; return; }
+  }
+
+  currentOperatore = user;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('operatore-badge').textContent = '👤 ' + user;
+
+  // Salva sessione (scade dopo 8 ore)
+  localStorage.setItem('h_session', JSON.stringify({ user, expires: Date.now() + 8*3600*1000 }));
+
+  renderAll();
+}
+
+function doLogout() {
+  if (!confirm('Vuoi uscire dalla sessione?')) return;
+  currentOperatore = null;
+  localStorage.removeItem('h_session');
+  showLoginScreen();
+}
+
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Ripristina sessione se non scaduta
+async function checkSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem('h_session') || 'null');
+    if (s && s.expires > Date.now()) {
+      currentOperatore = s.user;
+      document.getElementById('operatore-badge').textContent = '👤 ' + s.user;
+      return true;
+    }
+  } catch(e) {}
+  return false;
 }
 
 async function syncAll() {
@@ -718,6 +853,7 @@ function switchTab(id, el) {
   if (id==='history')  { updateDeviceFilter(); renderHistory(); }
   if (id==='dash')     { buildDash(); }
   if (id==='log')      { renderDevices(); }
+  if (id==='setup')    { renderPasswordMgmt(); }
   if (id==='schedule') { renderScheduleToday(); }
   if (id==='firma')    { updateDate(); renderFirmaScreen(); }
 }
@@ -850,7 +986,8 @@ async function sendData(name, type, area) {
     tipo: 'temperatura',
     date: now.toLocaleDateString('it-IT'),
     time: now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
-    name, type, temp: val.toString(), area, status
+    name, type, temp: val.toString(), area, status,
+    operatore: currentOperatore || 'N/D'
   };
   // Salva ultima temp locale
   lastTemps[name] = {temp:val, ok:status==='OK'};
@@ -861,13 +998,18 @@ async function sendData(name, type, area) {
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
   if (isOnline) {
     try {
-      await fetch(G,{method:'POST',mode:'no-cors',body:JSON.stringify(entry)});
-      showToast(`✓ ${name} · ${val}° registrato`,'success');
-      el.value=''; el.classList.remove('warn');
-      const w=document.getElementById('tw-'+id); if(w) w.classList.remove('on');
-      if (status==='ERR') setTimeout(()=>openModal(entry), 600);
-    } catch(e) { queueEntry(entry); showToast('Salvato offline','warning'); }
-  } else { queueEntry(entry); showToast('Salvato offline','warning'); el.value=''; }
+      const res = await fetch(G, {method:'POST', body:JSON.stringify(entry)});
+      const json = await res.json();
+      if (json && json.success) {
+        showToast(`✓ ${name} · ${val}° salvato sul cloud`,'success');
+        el.value=''; el.classList.remove('warn');
+        const w=document.getElementById('tw-'+id); if(w) w.classList.remove('on');
+        if (status==='ERR') setTimeout(()=>openModal(entry), 600);
+      } else {
+        queueEntry(entry); showToast('Errore cloud — salvato in coda','warning');
+      }
+    } catch(e) { queueEntry(entry); showToast('Salvato offline — invierò appena possibile','warning'); }
+  } else { queueEntry(entry); showToast('Offline — salvato in coda','warning'); el.value=''; }
   btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 16 16"><path d="M2 8l12-6-6 12V9L2 8z"/></svg>';
   renderDevices(); buildDash(); updateDashBadge();
 }
@@ -1143,6 +1285,7 @@ async function saveFirma() {
 }
 
 function renderFirmaScreen() {
+  if(!Array.isArray(cloudFirme)) cloudFirme = [];
   // Chips operatori
   const chips=document.getElementById('operatori-chips'); if(!chips)return;
   chips.innerHTML='';
