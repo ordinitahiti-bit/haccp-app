@@ -4,289 +4,929 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>HACCP Pro Cloud</title>
-<!-- Libreria per esportazione Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root { --navy: #1A3A5C; --blue: #2E6DA4; --gray: #f0f4f8; --border: #dde3ea; --red: #9B1C1C; }
-  body { font-family: system-ui, sans-serif; background: var(--gray); max-width: 600px; margin: 0 auto; padding: 10px; color: #333; }
-  .screen { display: none; padding: 10px; }
-  .screen.active { display: block; }
-  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-  .area-selector { display: flex; gap: 5px; margin-bottom: 20px; }
-  .area-btn { flex: 1; padding: 12px 5px; border: 2px solid var(--navy); border-radius: 8px; background: white; color: var(--navy); font-weight: bold; cursor: pointer; font-size: 13px; }
-  .area-btn.active { background: var(--navy); color: white; }
-  input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 16px; background: white; }
-  button { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-  .btn-primary { background: var(--navy); color: white; }
-  .btn-outline { background: white; color: var(--navy); border: 2px solid var(--navy); margin-top: 10px; }
-  .btn-excel { background: #1D6F42; color: white; margin-top: 10px; }
-  .history-table { width: 100%; border-collapse: collapse; font-size: 12px; background: white; }
-  .history-table th, .history-table td { padding: 12px 8px; border-bottom: 1px solid var(--border); text-align: left; }
-  .history-table th { background: var(--navy); color: white; position: sticky; top: 0; }
-  label { font-size: 11px; font-weight: bold; color: var(--navy); text-transform: uppercase; margin-bottom: 4px; display: block; }
-  .status-ok { color: green; font-weight: bold; }
-  .status-err { color: red; font-weight: bold; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:#1A3A5C; --navy-dark:#142e4a; --blue:#2E6DA4; --blue-light:#e6f1fb;
+  --gray-bg:#f0f4f8; --border:#dde3ea; --border-strong:#c5cdd8;
+  --red:#c0392b; --red-light:#fcebeb; --green:#1a7a4a; --green-light:#eaf3de;
+  --amber:#854f0b; --amber-light:#faeeda;
+  --text:#1a1a1a; --text-muted:#6b7280; --surface:#ffffff;
+  --radius:10px; --radius-sm:6px;
+}
+body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--gray-bg); max-width:480px; margin:0 auto; color:var(--text); min-height:100vh; padding-bottom:24px; }
+
+.topbar { background:var(--navy); padding:16px 16px 0; color:white; position:sticky; top:0; z-index:100; }
+.topbar-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+.topbar h1 { font-size:16px; font-weight:600; margin:0 0 3px; }
+.topbar p { font-size:11px; opacity:0.65; margin:0; }
+.online-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; margin-right:5px; animation:pulse 2.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+.top-badge { font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.12); color:white; white-space:nowrap; }
+.top-badge.has-err { background:rgba(192,57,43,0.85); }
+
+.tabs { display:flex; background:var(--navy-dark); border-top:1px solid rgba(255,255,255,0.08); }
+.tab { flex:1; padding:10px 2px; text-align:center; font-size:10px; font-weight:600; color:rgba(255,255,255,0.45); cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s,border-color 0.15s; letter-spacing:0.04em; text-transform:uppercase; position:relative; }
+.tab.active { color:white; border-bottom-color:#4da3ff; }
+
+.screen { display:none; padding:14px; }
+.screen.active { display:block; }
+.card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:14px; margin-bottom:10px; }
+
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.stat-card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:12px 14px; }
+.stat-label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:5px; }
+.stat-value { font-size:26px; font-weight:600; color:var(--text); }
+.stat-value.ok { color:var(--green); }
+.stat-value.err { color:var(--red); }
+
+.alert-banner { background:var(--red-light); border:1px solid #f09595; border-radius:var(--radius); padding:11px 13px; margin-bottom:8px; display:flex; align-items:flex-start; gap:10px; }
+.alert-dot { width:8px; height:8px; border-radius:50%; background:var(--red); flex-shrink:0; margin-top:3px; }
+.alert-text { font-size:12px; color:#7a1f1f; line-height:1.5; flex:1; }
+.fix-btn { font-size:11px; font-weight:700; color:var(--red); background:white; border:1px solid #f09595; border-radius:var(--radius-sm); padding:4px 10px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+
+.section-title { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin:14px 0 7px; }
+
+.hist-item { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
+.hist-name { font-size:13px; font-weight:600; color:var(--text); margin:0 0 2px; }
+.hist-meta { font-size:11px; color:var(--text-muted); }
+.hist-temp { font-size:20px; font-weight:600; margin-bottom:3px; }
+.hist-right { text-align:right; }
+
+.badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:0.04em; }
+.badge-ok { background:var(--green-light); color:#155a35; }
+.badge-err { background:var(--red-light); color:#7a1f1f; }
+.badge-fix { background:var(--amber-light); color:var(--amber); }
+
+.area-pills { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+.area-pill { padding:6px 13px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted); transition:all 0.15s; user-select:none; }
+.area-pill.active { background:var(--navy); color:white; border-color:var(--navy); }
+
+.device-row { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:12px 13px; margin-bottom:7px; display:flex; align-items:center; gap:11px; }
+.device-row.has-err { border-color:#f09595; background:#fff9f9; }
+.device-icon { width:36px; height:36px; border-radius:9px; background:var(--blue-light); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.device-icon.gelo { background:#e1f5ee; }
+.device-name { font-size:13px; font-weight:600; color:var(--text); margin:0 0 2px; }
+.device-meta { font-size:11px; color:var(--text-muted); }
+.device-right { margin-left:auto; display:flex; align-items:center; gap:7px; }
+.temp-input { width:65px; padding:8px 6px; font-size:15px; font-weight:500; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:var(--gray-bg); color:var(--text); text-align:center; transition:border-color 0.15s; }
+.temp-input:focus { outline:none; border-color:var(--blue); background:white; }
+.temp-input.warn { border-color:#f09595; background:#fff5f5; }
+.send-btn { width:34px; height:34px; border-radius:var(--radius-sm); background:var(--navy); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:opacity 0.15s,transform 0.1s; }
+.send-btn:active { transform:scale(0.93); opacity:0.8; }
+.send-btn svg { width:13px; height:13px; fill:white; }
+.send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.temp-warn { font-size:10px; color:var(--red); font-weight:600; margin-top:3px; display:none; }
+.temp-warn.visible { display:block; }
+
+.schedule-row { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; margin-bottom:6px; display:flex; align-items:center; gap:12px; }
+.schedule-time { font-size:20px; font-weight:700; color:var(--navy); min-width:52px; }
+.schedule-label { font-size:13px; font-weight:500; color:var(--text); }
+.schedule-sub { font-size:11px; color:var(--text-muted); }
+.schedule-status { margin-left:auto; }
+.schedule-row.done { border-color:var(--green); background:#f6fdf8; }
+.schedule-row.overdue { border-color:var(--red); background:#fff5f5; }
+
+.firma-box { border:2px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:10px; }
+.firma-box canvas { border:1px solid var(--border); border-radius:var(--radius-sm); width:100%; height:120px; background:white; cursor:crosshair; touch-action:none; display:block; }
+.firma-saved { background:var(--green-light); border-radius:var(--radius-sm); padding:8px; font-size:12px; color:var(--green); font-weight:600; text-align:center; display:none; }
+.firma-saved.visible { display:block; }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; display:flex; align-items:flex-end; justify-content:center; }
+.modal-overlay.hidden { display:none; }
+.modal { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:20px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; }
+.modal h3 { font-size:15px; font-weight:700; margin-bottom:14px; color:var(--text); }
+.modal-close { float:right; background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer; }
+.action-chip { display:inline-block; padding:7px 13px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); margin:4px 4px 4px 0; transition:all 0.15s; }
+.action-chip.selected { background:var(--navy); color:white; border-color:var(--navy); }
+
+input[type=text],input[type=time],input[type=number],textarea,select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:14px; background:var(--surface); color:var(--text); font-family:inherit; }
+input:focus,textarea:focus,select:focus { outline:none; border-color:var(--blue); }
+textarea { resize:vertical; min-height:70px; }
+label { font-size:11px; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; display:block; }
+.field { margin-bottom:12px; }
+
+.btn { width:100%; padding:13px; border-radius:var(--radius); border:none; font-weight:700; font-size:14px; cursor:pointer; transition:opacity 0.15s,transform 0.1s; font-family:inherit; }
+.btn:active { transform:scale(0.98); opacity:0.9; }
+.btn-primary { background:var(--navy); color:white; }
+.btn-success { background:#1D6F42; color:white; }
+.btn-outline { background:var(--surface); color:var(--navy); border:2px solid var(--navy); }
+.btn-pdf { background:#7a1f1f; color:white; }
+.btn-row { display:flex; gap:8px; margin-bottom:10px; }
+.btn-row .btn { flex:1; padding:10px; font-size:12px; }
+
+#toast-container { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:calc(100% - 28px); max-width:452px; z-index:999; pointer-events:none; }
+.toast { border-radius:var(--radius); padding:11px 15px; font-size:13px; font-weight:500; margin-bottom:8px; display:flex; align-items:center; gap:9px; animation:slideUp 0.25s ease,fadeOut 0.4s ease 3s forwards; pointer-events:auto; }
+.toast.success { background:var(--green); color:white; }
+.toast.error { background:var(--red); color:white; }
+.toast.warning { background:#d97706; color:white; }
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes fadeOut { to{opacity:0} }
+
+.filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+
+.offline-bar { background:var(--amber-light); border-bottom:1px solid #f5c185; padding:7px 14px; font-size:11px; font-weight:600; color:var(--amber); display:none; text-align:center; }
+.offline-bar.visible { display:block; }
+
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.empty-state { text-align:center; padding:30px 20px; color:var(--text-muted); }
+.empty-state .icon { font-size:28px; margin-bottom:8px; }
+.empty-state p { font-size:13px; margin-top:4px; }
+
+.hist-table { width:100%; border-collapse:collapse; font-size:12px; }
+.hist-table th { background:var(--navy); color:white; padding:10px 8px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; }
+.hist-table td { padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+.hist-table tr:last-child td { border-bottom:none; }
+.hist-table tr.err-row { background:#fff9f9; }
+
+.setup-item { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:11px 13px; margin-bottom:7px; display:flex; align-items:center; gap:10px; }
+.setup-info .name { font-size:13px; font-weight:600; color:var(--text); }
+.setup-info .sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
+.del-btn { margin-left:auto; width:28px; height:28px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent; cursor:pointer; color:var(--text-muted); font-size:15px; display:flex; align-items:center; justify-content:center; transition:background 0.15s,color 0.15s; }
+.del-btn:hover { background:var(--red-light); color:var(--red); border-color:#f09595; }
+
+.setup-form { background:var(--surface); border-radius:var(--radius); border:2px dashed var(--border); padding:14px; margin-top:10px; }
+
+.queue-info { font-size:11px; color:var(--amber); font-weight:600; padding:6px 0; display:none; }
+.queue-info.visible { display:block; }
+
+.reminder-dot { width:8px; height:8px; border-radius:50%; background:var(--red); display:none; position:absolute; top:6px; right:6px; }
+.reminder-dot.visible { display:block; }
+
+.operatore-chip { display:inline-block; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted); margin:4px 6px 4px 0; transition:all 0.15s; }
+.operatore-chip.selected { background:var(--navy); color:white; border-color:var(--navy); }
+
+.separator { border-top:1px solid var(--border); margin:16px 0; }
 </style>
 </head>
 <body>
 
-<!-- SETUP -->
-<div id="screen-setup" class="screen">
-  <h2>⚙️ Configurazione Apparecchi</h2>
-  <div id="setup-container"></div>
-  <button class="btn-outline" onclick="addSetupItem()">+ Aggiungi Frigo/Gelo</button>
-  <button class="btn-primary" onclick="saveSetup()" style="margin-top:20px;">Salva e Inizia</button>
+<div id="offline-bar" class="offline-bar">⚠️ Nessuna connessione — dati salvati localmente</div>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div>
+      <h1>HACCP Pro Cloud</h1>
+      <p><span class="online-dot"></span><span id="today-date"></span></p>
+    </div>
+    <span class="top-badge" id="top-badge">—</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('dash',this)">Oggi</div>
+    <div class="tab" onclick="switchTab('log',this)">Registra</div>
+    <div class="tab" onclick="switchTab('schedule',this)">Orari<span class="reminder-dot" id="rdot"></span></div>
+    <div class="tab" onclick="switchTab('firma',this)">Firma</div>
+    <div class="tab" onclick="switchTab('history',this)">Report</div>
+    <div class="tab" onclick="switchTab('setup',this)">Setup</div>
+  </div>
 </div>
 
-<!-- MAIN -->
-<div id="screen-main" class="screen active">
-  <h2 style="margin-bottom:15px;">📝 Registro HACCP</h2>
-  <div class="area-selector">
-    <button id="btn-CUCINA" class="area-btn active" onclick="setArea('CUCINA')">🍳 CUCINA</button>
-    <button id="btn-BAR" class="area-btn" onclick="setArea('BAR')">☕ BAR</button>
-    <button id="btn-RISTORANTE" class="area-btn" onclick="setArea('RISTORANTE')">🍽️ RISTO</button>
+<!-- MODAL AZIONE CORRETTIVA -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="closeModalBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3>🛠 Azione Correttiva</h3>
+    <p id="modal-sub" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;"></p>
+    <div class="field">
+      <label>Azione eseguita</label>
+      <div id="action-chips" style="margin-bottom:8px;"></div>
+    </div>
+    <div class="field">
+      <label>Note</label>
+      <textarea id="action-note" placeholder="Descrivi l'intervento adottato..."></textarea>
+    </div>
+    <div class="field">
+      <label>Responsabile</label>
+      <input type="text" id="action-resp" placeholder="Nome operatore">
+    </div>
+    <button class="btn btn-primary" onclick="saveAction()">✓ Salva azione correttiva</button>
   </div>
-  <div id="input-container"></div>
-  <button class="btn-primary" onclick="showScreen('screen-history'); loadCloudData()" style="margin-top: 20px;">📜 Storico & Report Mensili</button>
-  <button class="btn-outline" onclick="showSetupScreen()">⚙️ Modifica Configurazione</button>
 </div>
 
-<!-- STORICO -->
-<div id="screen-history" class="screen">
-  <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
-    <h2>📊 Report Cloud</h2>
-    <button onclick="showScreen('screen-main')" style="width:auto; padding:8px 15px; background:#ddd; border-radius:5px;">⬅️ Esci</button>
+<!-- DASHBOARD -->
+<div id="screen-dash" class="screen active">
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Rilevazioni oggi</div><div class="stat-value" id="stat-count">—</div></div>
+    <div class="stat-card"><div class="stat-label">Anomalie</div><div class="stat-value err" id="stat-err">—</div></div>
+    <div class="stat-card"><div class="stat-label">Apparecchi OK</div><div class="stat-value ok" id="stat-ok">—</div></div>
+    <div class="stat-card"><div class="stat-label">Ultima ril.</div><div class="stat-value" id="stat-last" style="font-size:18px;padding-top:4px;">—</div></div>
   </div>
-  
+  <div id="dash-alerts"></div>
+  <div class="section-title">Ultime rilevazioni</div>
+  <div id="dash-recent"><div class="empty-state"><div class="icon">☁️</div><p>Caricamento dati cloud...</p></div></div>
+</div>
+
+<!-- REGISTRA -->
+<div id="screen-log" class="screen">
+  <div class="area-pills">
+    <span class="area-pill active" onclick="setArea('CUCINA',this)">🍳 Cucina</span>
+    <span class="area-pill" onclick="setArea('BAR',this)">☕ Bar</span>
+    <span class="area-pill" onclick="setArea('RISTORANTE',this)">🍽️ Ristorante</span>
+  </div>
+  <div id="device-list"></div>
+  <div id="queue-info" class="queue-info"></div>
+</div>
+
+<!-- ORARI -->
+<div id="screen-schedule" class="screen">
   <div class="card">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <div>
-        <label>Seleziona Mese</label>
-        <select id="filter-month" onchange="renderHistoryTable()"></select>
-      </div>
-      <div>
-        <label>Zona</label>
-        <select id="filter-area" onchange="updateDeviceFilter()">
-          <option value="ALL">Tutte</option>
-          <option value="CUCINA">Cucina</option>
-          <option value="BAR">Bar</option>
-          <option value="RISTORANTE">Ristorante</option>
-        </select>
+    <div class="section-title" style="margin-top:0;">Sessioni di rilevazione</div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Configura gli orari in cui le temperature devono essere controllate. Il punto rosso nell'header si accende se una sessione è in ritardo.</p>
+    <div id="schedule-slots"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <input type="time" id="new-slot-time" style="flex:1;">
+      <input type="text" id="new-slot-label" placeholder="Es: Apertura" style="flex:1.5;">
+      <button onclick="addSlot()" style="padding:10px 14px;background:var(--navy);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;white-space:nowrap;font-family:inherit;">+</button>
+    </div>
+  </div>
+  <div class="section-title">Stato sessioni di oggi</div>
+  <div id="schedule-today"></div>
+</div>
+
+<!-- FIRMA -->
+<div id="screen-firma" class="screen">
+  <div class="card">
+    <div class="section-title" style="margin-top:0;">Operatore di turno</div>
+    <div class="field">
+      <label>Seleziona operatore</label>
+      <div id="operatori-chips" style="margin-bottom:8px;"></div>
+      <input type="text" id="firma-nome-input" placeholder="Oppure scrivi nome e cognome">
+    </div>
+    <div class="field">
+      <label>Data e ora</label>
+      <input type="text" id="firma-data-display" readonly style="background:var(--gray-bg);color:var(--text-muted);">
+    </div>
+    <div class="firma-box">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Firma digitale</p>
+      <canvas id="firma-canvas" width="440" height="120"></canvas>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="clearFirma()" class="btn btn-outline" style="flex:1;padding:9px;font-size:12px;">✕ Cancella</button>
+        <button onclick="saveFirma()" class="btn btn-primary" style="flex:2;padding:9px;font-size:12px;">✓ Salva firma turno</button>
       </div>
     </div>
-    <label>Dispositivo Specifico</label>
-    <select id="filter-device" onchange="renderHistoryTable()">
-      <option value="ALL">Tutti i dispositivi</option>
-    </select>
-    <button class="btn-excel" onclick="exportToExcel()">📊 Scarica Excel (Filtro Attivo)</button>
+    <div class="firma-saved" id="firma-saved-msg">✓ Firma salvata per questo turno</div>
   </div>
+  <div class="section-title">Firme registrate oggi</div>
+  <div id="firme-list"></div>
+</div>
 
-  <div class="card" style="padding:0; overflow: hidden;">
-    <div style="max-height: 450px; overflow-y: auto;">
-      <table class="history-table">
-        <thead><tr><th>Data/Ora</th><th>Dispositivo</th><th>Temp</th></tr></thead>
+<!-- REPORT -->
+<div id="screen-history" class="screen">
+  <div class="filter-grid">
+    <select id="filter-month" onchange="renderHistory()"></select>
+    <select id="filter-area" onchange="updateDeviceFilter()">
+      <option value="ALL">Tutte le zone</option>
+      <option value="CUCINA">Cucina</option>
+      <option value="BAR">Bar</option>
+      <option value="RISTORANTE">Ristorante</option>
+    </select>
+  </div>
+  <select id="filter-device" onchange="renderHistory()" style="margin-bottom:8px;"><option value="ALL">Tutti i dispositivi</option></select>
+  <div class="btn-row">
+    <button class="btn btn-outline" id="btn-only-err" onclick="toggleErrFilter()" style="flex:1;padding:9px;font-size:12px;border-width:1.5px;">Solo anomalie</button>
+    <button class="btn btn-success" onclick="exportExcel()" style="flex:1;padding:9px;font-size:12px;">📊 Excel</button>
+  </div>
+  <button class="btn btn-pdf" onclick="exportPDF()" style="margin-bottom:12px;padding:11px;">📄 Genera PDF ufficiale HACCP</button>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="max-height:400px;overflow-y:auto;">
+      <table class="hist-table">
+        <thead><tr><th>Data/Ora</th><th>Dispositivo</th><th>°C</th><th>Stato</th></tr></thead>
         <tbody id="history-body"></tbody>
       </table>
     </div>
   </div>
+  <p id="history-count" style="font-size:11px;color:var(--text-muted);text-align:right;margin-top:6px;"></p>
 </div>
 
+<!-- SETUP -->
+<div id="screen-setup" class="screen">
+  <div class="section-title">Apparecchi configurati</div>
+  <div id="setup-list"></div>
+  <div class="section-title" style="margin-top:16px;">Aggiungi apparecchio</div>
+  <div class="setup-form">
+    <div class="field"><label>Nome</label><input type="text" id="new-name" placeholder="Es: Frigo Verdure"></div>
+    <div class="field"><label>Zona</label><select id="new-area"><option value="CUCINA">🍳 Cucina</option><option value="BAR">☕ Bar</option><option value="RISTORANTE">🍽️ Ristorante</option></select></div>
+    <div class="field"><label>Tipo</label><select id="new-type"><option value="frigo">❄️ Frigo (soglia +4°C)</option><option value="gelo">🧊 Gelo (soglia -18°C)</option></select></div>
+    <button class="btn btn-primary" onclick="addDevice()">+ Aggiungi</button>
+  </div>
+
+  <div class="separator"></div>
+  <div class="section-title">Operatori abilitati</div>
+  <div id="operatori-setup-list"></div>
+  <div style="display:flex;gap:8px;margin-top:8px;">
+    <input type="text" id="new-operatore" placeholder="Nome operatore" style="flex:1;">
+    <button onclick="addOperatore()" style="padding:10px 14px;background:var(--navy);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">+</button>
+  </div>
+
+  <div class="separator"></div>
+  <div class="section-title">Intestazione documento PDF</div>
+  <div class="card">
+    <div class="field"><label>Nome azienda / ristorante</label><input type="text" id="cfg-azienda" placeholder="Es: Ristorante Da Mario" oninput="saveCfg()"></div>
+    <div class="field"><label>Indirizzo</label><input type="text" id="cfg-indirizzo" placeholder="Via Roma 1, Milano" oninput="saveCfg()"></div>
+    <div class="field"><label>Responsabile HACCP</label><input type="text" id="cfg-responsabile" placeholder="Nome del responsabile" oninput="saveCfg()"></div>
+  </div>
+
+  <div class="separator"></div>
+  <p style="font-size:10px;color:var(--text-muted);word-break:break-all;background:var(--blue-light);padding:8px;border-radius:6px;line-height:1.6;">🔗 Google Apps Script collegato:<br>https://script.google.com/macros/s/AKfycbz7CobBEyUapgkq_8Od3o0CkFdgWsuGuOm6qfLdoFBYnx2TErI7C8Xkbp0Z-DK1gWsc/exec</p>
+</div>
+
+<div id="toast-container"></div>
+
 <script>
-  // IL TUO URL GOOGLE APPS SCRIPT
-  const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7CobBEyUapgkq_8Od3o0CkFdgWsuGuOm6qfLdoFBYnx2TErI7C8Xkbp0Z-DK1gWsc/exec";
-  
-  let config = JSON.parse(localStorage.getItem('haccp_config')) || [];
-  let currentArea = 'CUCINA';
-  let cloudData = [];
+const G_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7CobBEyUapgkq_8Od3o0CkFdgWsuGuOm6qfLdoFBYnx2TErI7C8Xkbp0Z-DK1gWsc/exec";
+const AZIONI_PRESET = ["Prodotti spostati","Tecnico chiamato","Impostazioni corrette","Prodotti smaltiti","Porta controllata","Sbrinamento effettuato","In attesa verifica"];
 
-  function init() {
-    setupMonthFilter();
-    if (config.length > 0) { renderMain(); } 
-    else { showSetupScreen(); }
+let config        = JSON.parse(localStorage.getItem('haccp_config_v3'))    || [];
+let operatori     = JSON.parse(localStorage.getItem('haccp_operatori'))    || [];
+let scheduleSlots = JSON.parse(localStorage.getItem('haccp_schedule'))     || [{time:"09:00",label:"Apertura"},{time:"15:00",label:"Pomeriggio"},{time:"21:00",label:"Chiusura"}];
+let aziendaCfg    = JSON.parse(localStorage.getItem('haccp_azienda'))      || {azienda:'',indirizzo:'',responsabile:''};
+let lastTemps     = JSON.parse(localStorage.getItem('haccp_last_temps'))   || {};
+let offlineQueue  = JSON.parse(localStorage.getItem('haccp_queue'))        || [];
+let corrective    = JSON.parse(localStorage.getItem('haccp_corrective'))   || {};
+let cloudData     = [];
+let currentArea   = 'CUCINA';
+let onlyErr       = false;
+let isOnline      = navigator.onLine;
+let modalEntry    = null;
+let firmaCanvas, firmaCtx, drawing = false;
+
+// ---- INIT ----
+function init() {
+  setupMonthFilter();
+  updateDate();
+  loadCfgFields();
+  renderSetup();
+  renderOperatoriSetup();
+  renderDevices();
+  renderScheduleConfig();
+  renderFirmaScreen();
+  checkOnline();
+  checkReminderDot();
+  loadCloudData();
+  flushQueue();
+  initFirmaCanvas();
+  setInterval(checkReminderDot, 60000);
+  window.addEventListener('online',  () => { isOnline=true;  updateOfflineBar(); flushQueue(); showToast('Connessione ripristinata','success'); });
+  window.addEventListener('offline', () => { isOnline=false; updateOfflineBar(); showToast('Modalità offline attivata','warning'); });
+}
+
+function updateDate() {
+  const now = new Date();
+  document.getElementById('today-date').textContent = now.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  const el = document.getElementById('firma-data-display');
+  if (el) el.value = now.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function checkOnline() { isOnline = navigator.onLine; updateOfflineBar(); }
+function updateOfflineBar() { document.getElementById('offline-bar').classList.toggle('visible',!isOnline); }
+
+function loadCfgFields() {
+  document.getElementById('cfg-azienda').value      = aziendaCfg.azienda      || '';
+  document.getElementById('cfg-indirizzo').value    = aziendaCfg.indirizzo    || '';
+  document.getElementById('cfg-responsabile').value = aziendaCfg.responsabile || '';
+}
+function saveCfg() {
+  aziendaCfg = {
+    azienda:      document.getElementById('cfg-azienda').value,
+    indirizzo:    document.getElementById('cfg-indirizzo').value,
+    responsabile: document.getElementById('cfg-responsabile').value
+  };
+  localStorage.setItem('haccp_azienda', JSON.stringify(aziendaCfg));
+}
+
+// ---- TABS ----
+function switchTab(id, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  el.classList.add('active');
+  if (id==='history')  { updateDeviceFilter(); renderHistory(); }
+  if (id==='dash')     { buildDash(); }
+  if (id==='schedule') { renderScheduleToday(); }
+  if (id==='firma')    { updateDate(); renderFirmaScreen(); }
+}
+
+// ---- TOAST ----
+function showToast(msg, type='success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${{success:'✓',error:'✕',warning:'⚠'}[type]||'ℹ'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3600);
+}
+
+// ---- DEVICES ----
+function setArea(area, el) {
+  currentArea = area;
+  document.querySelectorAll('.area-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderDevices();
+}
+
+function renderDevices() {
+  const list = document.getElementById('device-list');
+  list.innerHTML = '';
+  const filtered = config.filter(c => c.area === currentArea);
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🔧</div><p>Nessun apparecchio in ${currentArea}.<br>Aggiungilo dal tab Setup.</p></div>`;
+    return;
   }
-
-  function setupMonthFilter() {
-    const sel = document.getElementById('filter-month');
-    const months = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-    const now = new Date();
-    for(let i=0; i<12; i++) {
-      let opt = document.createElement('option');
-      opt.value = (i + 1).toString().padStart(2, '0');
-      opt.text = months[i];
-      if(i === now.getMonth()) opt.selected = true;
-      sel.appendChild(opt);
-    }
-  }
-
-  function updateDeviceFilter() {
-    const area = document.getElementById('filter-area').value;
-    const devSel = document.getElementById('filter-device');
-    devSel.innerHTML = '<option value="ALL">Tutti i dispositivi</option>';
-    
-    // Estrai nomi unici dai dispositivi configurati
-    const devices = [...new Set(config.filter(c => area === 'ALL' || c.area === area).map(c => c.name))];
-    devices.forEach(d => {
-      let opt = document.createElement('option');
-      opt.value = d; opt.text = d;
-      devSel.appendChild(opt);
-    });
-    renderHistoryTable();
-  }
-
-  function setArea(area) {
-    currentArea = area;
-    document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-' + area).classList.add('active');
-    renderMain();
-  }
-
-  function renderMain() {
-    const container = document.getElementById('input-container');
-    container.innerHTML = '';
-    const filtered = config.filter(c => c.area === currentArea);
-    if(filtered.length === 0) {
-      container.innerHTML = `<p style="text-align:center; padding:20px;">Nessun frigo in ${currentArea}.</p>`;
-      return;
-    }
-    filtered.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>${item.name}</strong><br><small style="color:#666">${item.type.toUpperCase()}</small></div>
-          <input type="number" step="0.1" placeholder="°C" style="width:85px; margin:0;" onchange="sendData('${item.name}','${item.type}',this)">
-        </div>`;
-      container.appendChild(card);
-    });
-  }
-
-  async function sendData(name, type, el) {
-    const val = el.value; if(!val) return;
-    el.disabled = true;
-    const now = new Date();
-    const entry = {
-      date: now.toLocaleDateString('it-IT'),
-      time: now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}),
-      name, type, temp: val, area: currentArea,
-      status: (type==='frigo' && val<=4) || (type==='gelo' && val<=-18) ? "OK" : "ERR"
-    };
-    try {
-      await fetch(G_SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(entry) });
-      alert("✅ Registrato");
-      el.value = "";
-    } catch (e) { alert("❌ Errore"); }
-    el.disabled = false;
-  }
-
-  async function loadCloudData() {
-    const body = document.getElementById('history-body');
-    body.innerHTML = '<tr><td colspan="3" style="text-align:center">Caricamento Cloud...</td></tr>';
-    try {
-      const res = await fetch(G_SCRIPT_URL);
-      cloudData = await res.json();
-      renderHistoryTable();
-    } catch (e) { body.innerHTML = '<tr><td colspan="3">Errore connessione</td></tr>'; }
-  }
-
-  function renderHistoryTable() {
-    const mFilter = document.getElementById('filter-month').value;
-    const aFilter = document.getElementById('filter-area').value;
-    const dFilter = document.getElementById('filter-device').value;
-    const body = document.getElementById('history-body');
-    body.innerHTML = '';
-
-    const filtered = cloudData.filter(r => {
-      // Salta righe di intestazione o vuote
-      if (!r[0] || r[0] === "Data" || r[0].includes("Data")) return false; 
-      
-      const dateParts = r[0].split('/');
-      if (dateParts.length < 2) return false;
-      
-      const rowMonth = dateParts[1];
-      const matchMonth = rowMonth === mFilter;
-      const matchArea = aFilter === 'ALL' || r[6] === aFilter;
-      const matchDevice = dFilter === 'ALL' || r[2] === dFilter;
-      return matchMonth && matchArea && matchDevice;
-    });
-
-    if(filtered.length === 0) {
-        body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">Nessun dato trovato</td></tr>';
-        return;
-    }
-
-    filtered.reverse().forEach(r => {
-      body.innerHTML += `<tr>
-        <td>${r[0]} <small>${r[1]}</small></td>
-        <td>${r[2]}<br><small style="color:#888">${r[6]}</small></td>
-        <td class="${r[5]==='OK'?'status-ok':'status-err'}">${r[4]}°</td>
-      </tr>`;
-    });
-  }
-
-  function exportToExcel() {
-    const mName = document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
-    const dName = document.getElementById('filter-device').value;
-    
-    // Esporta solo ciò che è filtrato
-    const mFilter = document.getElementById('filter-month').value;
-    const aFilter = document.getElementById('filter-area').value;
-    const dFilter = document.getElementById('filter-device').value;
-
-    const dataToExport = cloudData.filter(r => {
-      if (!r[0] || r[0] === "Data" || r[0].includes("Data")) return false;
-      const rowMonth = r[0].split('/')[1];
-      return (rowMonth === mFilter) && (aFilter === 'ALL' || r[6] === aFilter) && (dFilter === 'ALL' || r[2] === dFilter);
-    });
-
-    const ws = XLSX.utils.json_to_sheet(dataToExport.map(r => ({
-      Data: r[0], Ora: r[1], Apparecchio: r[2], Tipo: r[3], Temp: r[4], Stato: r[5], Locale: r[6]
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report HACCP");
-    XLSX.writeFile(wb, `HACCP_${dName}_${mName}.xlsx`);
-  }
-
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id === 'screen-history') updateDeviceFilter();
-  }
-
-  function showSetupScreen() {
-    document.getElementById('setup-container').innerHTML = '';
-    if (config.length === 0) addSetupItem();
-    else config.forEach(c => addSetupItem(c.name, c.type, c.area));
-    showScreen('screen-setup');
-  }
-
-  function addSetupItem(name="", type="frigo", area="CUCINA") {
+  filtered.forEach(item => {
+    const last = lastTemps[item.name];
+    const soglia = item.type==='frigo' ? '+4°C' : '-18°C';
+    const lastLabel = last ? `Ult: <strong>${last.temp}°</strong> ${last.ok?'✓':'⚠'}` : 'Nessuna ril.';
+    const id = item.name.replace(/[^a-z0-9]/gi,'_');
     const div = document.createElement('div');
-    div.className = 'card';
+    div.className = 'device-row'+(last&&!last.ok?' has-err':'');
     div.innerHTML = `
-      <input type="text" class="setup-name" value="${name}" placeholder="Es: Frigo Bibite">
-      <select class="setup-area">
-        <option value="CUCINA" ${area==='CUCINA'?'selected':''}>Cucina</option>
-        <option value="BAR" ${area==='BAR'?'selected':''}>Bar</option>
-        <option value="RISTORANTE" ${area==='RISTORANTE'?'selected':''}>Ristorante</option>
-      </select>
-      <select class="setup-type">
-        <option value="frigo" ${type==='frigo'?'selected':''}>Frigo (+4°C)</option>
-        <option value="gelo" ${type==='gelo'?'selected':''}>Gelo (-18°C)</option>
-      </select>`;
-    document.getElementById('setup-container').appendChild(div);
+      <div class="device-icon ${item.type}">${item.type==='frigo'?'❄️':'🧊'}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="device-name">${item.name}</div>
+        <div class="device-meta">Soglia ${soglia} · ${lastLabel}</div>
+        <div class="temp-warn" id="tw-${id}">⚠ Fuori soglia!</div>
+      </div>
+      <div class="device-right">
+        <input class="temp-input" id="inp-${id}" type="number" step="0.1" placeholder="°C"
+          oninput="checkWarn('${item.name}','${item.type}',this)">
+        <button class="send-btn" id="sbtn-${id}"
+          onclick="sendData('${item.name}','${item.type}','${currentArea}')">
+          <svg viewBox="0 0 16 16"><path d="M2 8l12-6-6 12V9L2 8z"/></svg>
+        </button>
+      </div>`;
+    list.appendChild(div);
+  });
+  updateQueueInfo();
+}
+
+function checkWarn(name, type, el) {
+  const v = parseFloat(el.value);
+  const id = name.replace(/[^a-z0-9]/gi,'_');
+  const w  = document.getElementById('tw-'+id);
+  if (!w) return;
+  if (isNaN(v)) { w.classList.remove('visible'); el.classList.remove('warn'); return; }
+  const out = (type==='frigo'&&v>4)||(type==='gelo'&&v>-18);
+  w.classList.toggle('visible',out); el.classList.toggle('warn',out);
+}
+
+// ---- SEND ----
+async function sendData(name, type, area) {
+  const id  = name.replace(/[^a-z0-9]/gi,'_');
+  const el  = document.getElementById('inp-'+id);
+  const btn = document.getElementById('sbtn-'+id);
+  if (!el||el.value==='') { showToast('Inserisci una temperatura','warning'); return; }
+  const val = parseFloat(el.value);
+  if (isNaN(val)) { showToast('Valore non valido','error'); return; }
+  const now = new Date();
+  const status = (type==='frigo'&&val<=4)||(type==='gelo'&&val<=-18) ? 'OK' : 'ERR';
+  const entry = { date:now.toLocaleDateString('it-IT'), time:now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}), name, type, temp:val.toString(), area, status };
+  lastTemps[name] = {temp:val, ok:status==='OK'};
+  localStorage.setItem('haccp_last_temps', JSON.stringify(lastTemps));
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  if (isOnline) {
+    try {
+      await fetch(G_SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(entry)});
+      showToast(`✓ ${name} · ${val}° registrato`, 'success');
+      el.value=''; el.classList.remove('warn');
+      const w = document.getElementById('tw-'+id); if(w) w.classList.remove('visible');
+      if (status==='ERR') setTimeout(()=>openModal(entry), 600);
+    } catch(e) { queueEntry(entry); showToast('Salvato offline','warning'); }
+  } else { queueEntry(entry); showToast('Salvato offline','warning'); el.value=''; }
+  btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 16 16"><path d="M2 8l12-6-6 12V9L2 8z"/></svg>';
+  renderDevices();
+}
+
+// ---- QUEUE ----
+function queueEntry(e) { offlineQueue.push(e); localStorage.setItem('haccp_queue',JSON.stringify(offlineQueue)); updateQueueInfo(); }
+async function flushQueue() {
+  if (!isOnline||!offlineQueue.length) return;
+  const q=[...offlineQueue]; offlineQueue=[]; localStorage.setItem('haccp_queue','[]');
+  let ok=0;
+  for (const e of q) { try { await fetch(G_SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(e)}); ok++; } catch(err){offlineQueue.push(e);} }
+  localStorage.setItem('haccp_queue',JSON.stringify(offlineQueue));
+  if (ok>0) showToast(`${ok} rilevazione${ok>1?'i':''} sincronizzata${ok>1?'e':''}`, 'success');
+  updateQueueInfo();
+}
+function updateQueueInfo() {
+  const el = document.getElementById('queue-info'); if(!el) return;
+  if (offlineQueue.length>0) { el.textContent=`⏳ ${offlineQueue.length} in coda`; el.classList.add('visible'); }
+  else el.classList.remove('visible');
+}
+
+// ---- MODAL AZIONE ----
+function openModal(entry) {
+  modalEntry = entry;
+  document.getElementById('modal-sub').textContent = `${entry.name} — ${entry.temp}°C · ${entry.date} ${entry.time}`;
+  document.getElementById('action-note').value = '';
+  document.getElementById('action-resp').value = aziendaCfg.responsabile||'';
+  const chips = document.getElementById('action-chips'); chips.innerHTML='';
+  AZIONI_PRESET.forEach(a => {
+    const s=document.createElement('span'); s.className='action-chip'; s.textContent=a;
+    s.onclick=()=>s.classList.toggle('selected'); chips.appendChild(s);
+  });
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModalBg(e) { if(e.target.id==='modal-overlay') closeModal(); }
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); modalEntry=null; }
+function saveAction() {
+  if (!modalEntry) return;
+  const sel=[...document.querySelectorAll('.action-chip.selected')].map(c=>c.textContent);
+  const note=document.getElementById('action-note').value.trim();
+  const resp=document.getElementById('action-resp').value.trim();
+  if (!sel.length&&!note) { showToast("Seleziona almeno un'azione",'warning'); return; }
+  const key=`${modalEntry.name}_${modalEntry.date}_${modalEntry.time}`;
+  corrective[key]={azioni:sel, note, responsabile:resp, salvato:new Date().toLocaleString('it-IT')};
+  localStorage.setItem('haccp_corrective',JSON.stringify(corrective));
+  closeModal(); showToast('Azione correttiva registrata','success'); buildDash();
+}
+
+// ---- CLOUD & DASH ----
+async function loadCloudData() {
+  try { const r=await fetch(G_SCRIPT_URL); cloudData=await r.json(); buildDash(); updateDashBadge(); checkReminderDot(); }
+  catch(e) {}
+}
+
+function buildDash() {
+  const today=new Date().toLocaleDateString('it-IT');
+  const rows=cloudData.filter(r=>r[0]&&r[0]===today&&r[5]);
+  const errs=rows.filter(r=>r[5]==='ERR');
+  const okDev=config.filter(c=>{const l=lastTemps[c.name];return l&&l.ok;}).length;
+  document.getElementById('stat-count').textContent=rows.length;
+  document.getElementById('stat-err').textContent=errs.length;
+  document.getElementById('stat-ok').textContent=config.length>0?`${okDev}/${config.length}`:'—';
+  const times=rows.map(r=>r[1]).filter(Boolean);
+  document.getElementById('stat-last').textContent=times.length?times[times.length-1]:'—';
+
+  const ac=document.getElementById('dash-alerts'); ac.innerHTML='';
+  errs.slice(-5).reverse().forEach(r=>{
+    const key=`${r[2]}_${r[0]}_${r[1]}`; const hasFix=!!corrective[key];
+    ac.innerHTML+=`<div class="alert-banner">
+      <div class="alert-dot"></div>
+      <div class="alert-text"><strong>${r[2]}</strong> (${r[6]||''}) — ${r[4]}°C alle ${r[1]}${hasFix?'<br><span style="color:var(--green)">✓ Azione correttiva registrata</span>':''}</div>
+      ${!hasFix?`<button class="fix-btn" onclick='openModal({name:"${r[2]}",temp:"${r[4]}",date:"${r[0]}",time:"${r[1]}",area:"${r[6]||""}"})'>+ Azione</button>`:''}
+    </div>`;
+  });
+
+  const rec=document.getElementById('dash-recent');
+  const sorted=[...rows].reverse().slice(0,6);
+  if (!sorted.length){rec.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>Nessuna rilevazione oggi.</p></div>';return;}
+  rec.innerHTML=sorted.map(r=>`<div class="hist-item">
+    <div><div class="hist-name">${r[2]||''}</div><div class="hist-meta">${r[6]||''} · ${r[1]||''}</div></div>
+    <div class="hist-right"><div class="hist-temp" style="color:${r[5]==='OK'?'var(--green)':'var(--red)'}">${r[4]||''}°</div><span class="badge ${r[5]==='OK'?'badge-ok':'badge-err'}">${r[5]||''}</span></div>
+  </div>`).join('');
+}
+
+function updateDashBadge() {
+  const today=new Date().toLocaleDateString('it-IT');
+  const rows=cloudData.filter(r=>r[0]===today&&r[5]);
+  const errs=rows.filter(r=>r[5]==='ERR').length;
+  const badge=document.getElementById('top-badge');
+  badge.textContent=rows.length?`${rows.length-errs} OK · ${errs} ERR`:'Nessuna ril.';
+  badge.classList.toggle('has-err',errs>0);
+}
+
+// ---- SCHEDULE ----
+function renderScheduleConfig() {
+  const el=document.getElementById('schedule-slots'); el.innerHTML='';
+  scheduleSlots.forEach((s,i)=>{
+    const d=document.createElement('div'); d.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    d.innerHTML=`<span style="font-size:14px;font-weight:700;color:var(--navy);min-width:52px;">${s.time}</span><span style="font-size:13px;flex:1;">${s.label}</span><button onclick="deleteSlot(${i})" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px;font-family:inherit;">✕</button>`;
+    el.appendChild(d);
+  });
+  renderScheduleToday();
+}
+
+function addSlot() {
+  const t=document.getElementById('new-slot-time').value;
+  const l=document.getElementById('new-slot-label').value.trim();
+  if (!t) { showToast('Inserisci un orario','warning'); return; }
+  scheduleSlots.push({time:t,label:l||t});
+  scheduleSlots.sort((a,b)=>a.time.localeCompare(b.time));
+  localStorage.setItem('haccp_schedule',JSON.stringify(scheduleSlots));
+  document.getElementById('new-slot-time').value='';
+  document.getElementById('new-slot-label').value='';
+  renderScheduleConfig(); checkReminderDot();
+}
+
+function deleteSlot(i) {
+  scheduleSlots.splice(i,1); localStorage.setItem('haccp_schedule',JSON.stringify(scheduleSlots));
+  renderScheduleConfig(); checkReminderDot();
+}
+
+function renderScheduleToday() {
+  const now=new Date(); const nowMin=now.getHours()*60+now.getMinutes();
+  const today=now.toLocaleDateString('it-IT');
+  const rows=cloudData.filter(r=>r[0]===today);
+  const el=document.getElementById('schedule-today'); if(!el) return;
+  el.innerHTML='';
+  if (!scheduleSlots.length){el.innerHTML='<div class="empty-state"><p>Nessuna sessione configurata.</p></div>';return;}
+  scheduleSlots.forEach(s=>{
+    const [hh,mm]=s.time.split(':').map(Number); const slotMin=hh*60+mm;
+    const done=rows.some(r=>{if(!r[1])return false;const[rh,rm]=r[1].split(':').map(Number);return Math.abs((rh*60+rm)-slotMin)<=45;});
+    const isPast=slotMin<nowMin; const isClose=Math.abs(slotMin-nowMin)<=30;
+    let cls='',badge='';
+    if(done){cls='done';badge='<span class="badge badge-ok">Completata</span>';}
+    else if(isPast){cls='overdue';badge='<span class="badge badge-err">In ritardo</span>';}
+    else if(isClose){badge='<span class="badge badge-fix">Prossima</span>';}
+    else{badge='<span class="badge" style="background:var(--gray-bg);color:var(--text-muted);">Pianificata</span>';}
+    el.innerHTML+=`<div class="schedule-row ${cls}">
+      <div class="schedule-time">${s.time}</div>
+      <div><div class="schedule-label">${s.label}</div><div class="schedule-sub">${done?'✓ Rilevazioni registrate':'Tutte le zone'}</div></div>
+      <div class="schedule-status">${badge}</div>
+    </div>`;
+  });
+}
+
+function checkReminderDot() {
+  const now=new Date(); const nowMin=now.getHours()*60+now.getMinutes();
+  const today=now.toLocaleDateString('it-IT');
+  const rows=cloudData.filter(r=>r[0]===today);
+  const late=scheduleSlots.some(s=>{
+    const[hh,mm]=s.time.split(':').map(Number); const slotMin=hh*60+mm;
+    if(slotMin>=nowMin) return false;
+    return !rows.some(r=>{if(!r[1])return false;const[rh,rm]=r[1].split(':').map(Number);return Math.abs((rh*60+rm)-slotMin)<=45;});
+  });
+  const dot=document.getElementById('rdot'); if(dot) dot.classList.toggle('visible',late);
+}
+
+// ---- FIRMA ----
+function initFirmaCanvas() {
+  firmaCanvas=document.getElementById('firma-canvas');
+  firmaCtx=firmaCanvas.getContext('2d');
+  firmaCtx.strokeStyle='#1A3A5C'; firmaCtx.lineWidth=2.5; firmaCtx.lineCap='round'; firmaCtx.lineJoin='round';
+  const pos=(e,c)=>{const r=c.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(c.width/r.width),y:(s.clientY-r.top)*(c.height/r.height)};};
+  firmaCanvas.addEventListener('mousedown',e=>{drawing=true;const p=pos(e,firmaCanvas);firmaCtx.beginPath();firmaCtx.moveTo(p.x,p.y);});
+  firmaCanvas.addEventListener('mousemove',e=>{if(!drawing)return;const p=pos(e,firmaCanvas);firmaCtx.lineTo(p.x,p.y);firmaCtx.stroke();});
+  firmaCanvas.addEventListener('mouseup',()=>{drawing=false;});
+  firmaCanvas.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;const p=pos(e,firmaCanvas);firmaCtx.beginPath();firmaCtx.moveTo(p.x,p.y);},{passive:false});
+  firmaCanvas.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;const p=pos(e,firmaCanvas);firmaCtx.lineTo(p.x,p.y);firmaCtx.stroke();},{passive:false});
+  firmaCanvas.addEventListener('touchend',()=>{drawing=false;});
+}
+
+function clearFirma() {
+  firmaCtx.clearRect(0,0,firmaCanvas.width,firmaCanvas.height);
+  document.getElementById('firma-saved-msg').classList.remove('visible');
+}
+
+function saveFirma() {
+  const nome=document.getElementById('firma-nome-input').value.trim();
+  if(!nome){showToast("Inserisci il nome dell'operatore",'warning');return;}
+  const now=new Date(); const todayKey=now.toLocaleDateString('it-IT');
+  const stored=JSON.parse(localStorage.getItem('haccp_firme_oggi'))||{};
+  if(!stored[todayKey]) stored[todayKey]=[];
+  stored[todayKey].push({nome, data:now.toLocaleString('it-IT'), dataUrl:firmaCanvas.toDataURL()});
+  localStorage.setItem('haccp_firme_oggi',JSON.stringify(stored));
+  document.getElementById('firma-saved-msg').classList.add('visible');
+  showToast(`Firma di ${nome} salvata`,'success');
+  clearFirma(); renderFirmaScreen();
+}
+
+function renderFirmaScreen() {
+  const chips=document.getElementById('operatori-chips'); if(!chips)return;
+  chips.innerHTML='';
+  operatori.forEach(op=>{
+    const s=document.createElement('span'); s.className='operatore-chip'; s.textContent=op;
+    s.onclick=()=>{document.querySelectorAll('.operatore-chip').forEach(c=>c.classList.remove('selected'));s.classList.add('selected');document.getElementById('firma-nome-input').value=op;};
+    chips.appendChild(s);
+  });
+  const list=document.getElementById('firme-list'); if(!list)return;
+  const todayKey=new Date().toLocaleDateString('it-IT');
+  const stored=JSON.parse(localStorage.getItem('haccp_firme_oggi'))||{};
+  const firme=stored[todayKey]||[];
+  if(!firme.length){list.innerHTML='<div class="empty-state"><div class="icon">✍️</div><p>Nessuna firma registrata oggi.</p></div>';return;}
+  list.innerHTML=firme.map(f=>`<div class="card" style="padding:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div><div style="font-size:13px;font-weight:700;">${f.nome}</div><div style="font-size:11px;color:var(--text-muted);">${f.data}</div></div>
+      <span class="badge badge-ok">Firmato</span>
+    </div>
+    <img src="${f.dataUrl}" style="width:100%;height:60px;object-fit:contain;border:1px solid var(--border);border-radius:6px;background:white;">
+  </div>`).join('');
+}
+
+// ---- SETUP ----
+function renderSetup() {
+  const list=document.getElementById('setup-list'); if(!list)return; list.innerHTML='';
+  if(!config.length){list.innerHTML='<div class="empty-state"><p>Nessun apparecchio configurato.</p></div>';return;}
+  config.forEach((c,i)=>{
+    const d=document.createElement('div'); d.className='setup-item';
+    d.innerHTML=`<div class="device-icon ${c.type}">${c.type==='frigo'?'❄️':'🧊'}</div>
+      <div class="setup-info"><div class="name">${c.name}</div><div class="sub">${c.type==='frigo'?'Frigo (+4°C)':'Gelo (-18°C)'} · ${{CUCINA:'Cucina',BAR:'Bar',RISTORANTE:'Ristorante'}[c.area]||c.area}</div></div>
+      <button class="del-btn" onclick="deleteDevice(${i})">✕</button>`;
+    list.appendChild(d);
+  });
+}
+
+function addDevice() {
+  const name=document.getElementById('new-name').value.trim();
+  if(!name){showToast('Inserisci un nome','warning');return;}
+  if(config.find(c=>c.name===name)){showToast('Nome già usato','error');return;}
+  config.push({name,type:document.getElementById('new-type').value,area:document.getElementById('new-area').value});
+  localStorage.setItem('haccp_config_v3',JSON.stringify(config));
+  document.getElementById('new-name').value='';
+  renderSetup(); renderDevices(); showToast(`${name} aggiunto`,'success');
+}
+
+function deleteDevice(i) {
+  const n=config[i]?.name; config.splice(i,1); localStorage.setItem('haccp_config_v3',JSON.stringify(config));
+  renderSetup(); renderDevices(); showToast(`${n} rimosso`,'success');
+}
+
+function renderOperatoriSetup() {
+  const list=document.getElementById('operatori-setup-list'); if(!list)return; list.innerHTML='';
+  if(!operatori.length){list.innerHTML='<div class="empty-state" style="padding:10px 0;"><p>Nessun operatore configurato.</p></div>';return;}
+  operatori.forEach((op,i)=>{
+    const d=document.createElement('div'); d.className='setup-item';
+    d.innerHTML=`<span style="font-size:16px;">👤</span><div class="setup-info"><div class="name">${op}</div></div><button class="del-btn" onclick="deleteOperatore(${i})">✕</button>`;
+    list.appendChild(d);
+  });
+}
+
+function addOperatore() {
+  const v=document.getElementById('new-operatore').value.trim(); if(!v)return;
+  if(!operatori.includes(v)){operatori.push(v);localStorage.setItem('haccp_operatori',JSON.stringify(operatori));}
+  document.getElementById('new-operatore').value='';
+  renderOperatoriSetup(); renderFirmaScreen(); showToast(`${v} aggiunto`,'success');
+}
+
+function deleteOperatore(i) {
+  operatori.splice(i,1); localStorage.setItem('haccp_operatori',JSON.stringify(operatori));
+  renderOperatoriSetup(); renderFirmaScreen();
+}
+
+// ---- HISTORY ----
+function setupMonthFilter() {
+  const sel=document.getElementById('filter-month');
+  const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const now=new Date();
+  for(let i=0;i<12;i++){const o=document.createElement('option');o.value=(i+1).toString().padStart(2,'0');o.text=months[i];if(i===now.getMonth())o.selected=true;sel.appendChild(o);}
+}
+
+function updateDeviceFilter() {
+  const area=document.getElementById('filter-area').value;
+  const ds=document.getElementById('filter-device');
+  ds.innerHTML='<option value="ALL">Tutti i dispositivi</option>';
+  [...new Set(config.filter(c=>area==='ALL'||c.area===area).map(c=>c.name))].forEach(d=>{const o=document.createElement('option');o.value=d;o.text=d;ds.appendChild(o);});
+  renderHistory();
+}
+
+function toggleErrFilter() {
+  onlyErr=!onlyErr;
+  const btn=document.getElementById('btn-only-err');
+  btn.style.background=onlyErr?'var(--red-light)':'';
+  btn.style.borderColor=onlyErr?'#f09595':'';
+  btn.style.color=onlyErr?'var(--red)':'';
+  renderHistory();
+}
+
+function getFiltered() {
+  const mF=document.getElementById('filter-month').value;
+  const aF=document.getElementById('filter-area').value;
+  const dF=document.getElementById('filter-device').value;
+  return cloudData.filter(r=>{
+    if(!r[0]||r[0]==='Data'||r[0].includes('Data'))return false;
+    const p=r[0].split('/'); if(p.length<2)return false;
+    return p[1]===mF&&(aF==='ALL'||r[6]===aF)&&(dF==='ALL'||r[2]===dF)&&(!onlyErr||r[5]==='ERR');
+  });
+}
+
+function renderHistory() {
+  const data=getFiltered().reverse();
+  const body=document.getElementById('history-body');
+  document.getElementById('history-count').textContent=`${data.length} righe`;
+  body.innerHTML='';
+  if(!data.length){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Nessun dato trovato</td></tr>';return;}
+  data.forEach(r=>{
+    const ok=r[5]==='OK'; const key=`${r[2]}_${r[0]}_${r[1]}`; const hasFix=!!corrective[key];
+    body.innerHTML+=`<tr class="${ok?'':'err-row'}">
+      <td>${r[0]||''}<br><span style="color:var(--text-muted);font-size:10px;">${r[1]||''}</span></td>
+      <td>${r[2]||''}<br><span style="color:var(--text-muted);font-size:10px;">${r[6]||''}</span></td>
+      <td style="font-weight:700;color:${ok?'var(--green)':'var(--red)'};">${r[4]||''}°</td>
+      <td><span class="badge ${ok?'badge-ok':'badge-err'}">${r[5]||''}</span>${!ok&&hasFix?'<br><span class="badge badge-fix" style="margin-top:3px;display:inline-block;">Fix ✓</span>':''}</td>
+    </tr>`;
+  });
+}
+
+// ---- EXPORT EXCEL ----
+function exportExcel() {
+  const data=getFiltered(); if(!data.length){showToast('Nessun dato','warning');return;}
+  const mName=document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
+  const ws=XLSX.utils.json_to_sheet(data.map(r=>{
+    const fix=corrective[`${r[2]}_${r[0]}_${r[1]}`];
+    return {Data:r[0],Ora:r[1],Apparecchio:r[2],Tipo:r[3],'Temp (°C)':r[4],Stato:r[5],Zona:r[6],
+      'Azione Correttiva':fix?fix.azioni.join(', ')+(fix.note?' — '+fix.note:''):'',
+      'Responsabile Fix':fix?fix.responsabile:''};
+  }));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Report HACCP');
+  XLSX.writeFile(wb,`HACCP_${mName.replace(/\s/g,'_')}.xlsx`);
+}
+
+// ---- EXPORT PDF ----
+function exportPDF() {
+  const data=getFiltered(); if(!data.length){showToast('Nessun dato','warning');return;}
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const mName=document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
+  const aName=document.getElementById('filter-area').options[document.getElementById('filter-area').selectedIndex].text;
+  const W=210, M=14;
+
+  // Header
+  doc.setFillColor(26,58,92); doc.rect(0,0,W,30,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('REGISTRO HACCP — CONTROLLO TEMPERATURE',M,12);
+  doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+  doc.text(`${aziendaCfg.azienda||'[Nome azienda]'}  ·  ${aziendaCfg.indirizzo||'[Indirizzo]'}`,M,19);
+  doc.text(`Responsabile: ${aziendaCfg.responsabile||'[Nome]'}  ·  Periodo: ${mName}  ·  Zona: ${aName}`,M,25);
+
+  // Generato il
+  doc.setTextColor(80,80,80); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+  doc.text(`Generato il ${new Date().toLocaleString('it-IT')}  ·  Rif. Reg. CE 852/2004`,M,36);
+
+  // KPI boxes
+  const errs=data.filter(r=>r[5]==='ERR').length;
+  const fixed=data.filter(r=>!!corrective[`${r[2]}_${r[0]}_${r[1]}`]).length;
+  const boxes=[
+    {label:'Totale',val:data.length,c:[26,58,92]},
+    {label:'Conformi',val:data.length-errs,c:[26,122,74]},
+    {label:'Non conformi',val:errs,c:[192,57,43]},
+    {label:'Con azione',val:fixed,c:[133,79,11]}
+  ];
+  const bw=43, bh=16, by=40;
+  boxes.forEach((b,i)=>{
+    const x=M+i*(bw+3.3);
+    doc.setFillColor(...b.c); doc.roundedRect(x,by,bw,bh,2,2,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont('helvetica','bold');
+    doc.text(String(b.val),x+bw/2,by+9.5,{align:'center'});
+    doc.setFontSize(6); doc.setFont('helvetica','normal');
+    doc.text(b.label,x+bw/2,by+13.5,{align:'center'});
+  });
+
+  // Tabella
+  doc.autoTable({
+    startY:62,
+    head:[['Data','Ora','Apparecchio','Zona','Temp.','Stato','Azione correttiva','Resp.']],
+    body:data.map(r=>{
+      const fix=corrective[`${r[2]}_${r[0]}_${r[1]}`];
+      return [r[0]||'',r[1]||'',r[2]||'',r[6]||'',(r[4]||'')+'°C',r[5]||'',
+        fix?(fix.azioni.join(', ')+(fix.note?' — '+fix.note:'')).substring(0,50):'—',
+        fix?fix.responsabile:'—'];
+    }),
+    styles:{fontSize:7,cellPadding:2.5,lineColor:[220,227,234],lineWidth:0.3},
+    headStyles:{fillColor:[26,58,92],textColor:255,fontStyle:'bold',fontSize:7},
+    alternateRowStyles:{fillColor:[245,248,250]},
+    columnStyles:{0:{cellWidth:18},1:{cellWidth:12},2:{cellWidth:30},3:{cellWidth:20},4:{cellWidth:14,halign:'center'},5:{cellWidth:14,halign:'center'},6:{cellWidth:52},7:{cellWidth:22}},
+    didParseCell:(d)=>{
+      if(d.section==='body'&&d.column.index===5){
+        d.cell.styles.textColor=d.cell.raw==='ERR'?[192,57,43]:[26,122,74];
+        d.cell.styles.fontStyle='bold';
+      }
+    }
+  });
+
+  // Sezione firme
+  let y=doc.lastAutoTable.finalY+10;
+  if(y>245){doc.addPage();y=20;}
+  doc.setFillColor(26,58,92); doc.rect(M,y,W-M*2,7,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  doc.text('FIRME RESPONSABILI',M+2,y+5); y+=12;
+
+  const stored=JSON.parse(localStorage.getItem('haccp_firme_oggi'))||{};
+  const allFirme=Object.values(stored).flat();
+  if(!allFirme.length){
+    doc.setTextColor(120,120,120); doc.setFontSize(8); doc.setFont('helvetica','italic');
+    doc.text('Nessuna firma digitale registrata.',M,y+5); y+=14;
+  } else {
+    allFirme.forEach(f=>{
+      if(y>262){doc.addPage();y=20;}
+      doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
+      doc.text(f.nome,M,y+5);
+      doc.setFont('helvetica','normal'); doc.setTextColor(110,110,110); doc.setFontSize(7.5);
+      doc.text(f.data,M,y+10);
+      try{doc.addImage(f.dataUrl,'PNG',W-M-58,y,58,18);}catch(e){}
+      doc.setDrawColor(210,210,210); doc.line(M,y+24,W-M,y+24);
+      y+=28;
+    });
   }
 
-  function saveSetup() {
-    const names = document.querySelectorAll('.setup-name'), types = document.querySelectorAll('.setup-type'), areas = document.querySelectorAll('.setup-area');
-    config = [];
-    names.forEach((n, i) => { if(n.value) config.push({ name: n.value, type: types[i].value, area: areas[i].value }); });
-    localStorage.setItem('haccp_config', JSON.stringify(config));
-    showScreen('screen-main'); 
-    renderMain();
+  // Footer
+  const pages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    doc.setFillColor(240,244,248); doc.rect(0,286,210,11,'F');
+    doc.setTextColor(130,130,130); doc.setFontSize(7); doc.setFont('helvetica','normal');
+    doc.text(`HACCP Pro Cloud · ${aziendaCfg.azienda||''} · Reg. CE 852/2004`,M,291.5);
+    doc.text(`Pag. ${p}/${pages}`,W-M,291.5,{align:'right'});
   }
 
-  init();
+  doc.save(`HACCP_${mName.replace(/\s/g,'_')}.pdf`);
+  showToast('PDF generato','success');
+}
+
+init();
 </script>
 </body>
 </html>
