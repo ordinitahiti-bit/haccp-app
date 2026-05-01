@@ -423,11 +423,17 @@ textarea { resize:vertical; min-height:68px; }
   <div class="separator"></div>
   <div class="section-title">Gestione Password</div>
   <div class="card" id="password-mgmt">
-    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Imposta o cambia la password di un operatore (min. 6 caratteri)</p>
-    <div class="field"><label>Operatore</label><select id="pwd-user-sel"></select></div>
-    <div class="field"><label>Nuova password</label><input type="password" id="pwd-new" placeholder="min. 6 caratteri"></div>
-    <div class="field"><label>Conferma password</label><input type="password" id="pwd-confirm" placeholder="ripeti password"></div>
-    <button onclick="savePassword()" style="width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">💾 Salva password</button>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Tocca un operatore per impostarne la password</p>
+    <div id="pwd-user-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+    <div id="pwd-form" style="display:none;flex-direction:column;gap:10px;">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);">Password per: <span id="pwd-user-name" style="color:var(--blue);"></span></div>
+      <div class="field"><label>Nuova password</label><input type="password" id="pwd-new" placeholder="min. 6 caratteri"></div>
+      <div class="field"><label>Conferma password</label><input type="password" id="pwd-confirm" placeholder="ripeti la password"></div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="renderPasswordMgmt()" style="flex:1;padding:11px;background:var(--border);color:var(--text);border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">← Indietro</button>
+        <button onclick="savePassword()" style="flex:2;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-family:inherit;">💾 Salva password</button>
+      </div>
+    </div>
   </div>
 
   <div class="separator"></div>
