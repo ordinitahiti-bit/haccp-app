@@ -847,6 +847,7 @@ async function sendData(name, type, area) {
   const now    = new Date();
   const status = (type==='frigo'&&val<=4)||(type==='gelo'&&val<=-18) ? 'OK' : 'ERR';
   const entry  = {
+    tipo: 'temperatura',
     date: now.toLocaleDateString('it-IT'),
     time: now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
     name, type, temp: val.toString(), area, status
