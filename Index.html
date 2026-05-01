@@ -394,6 +394,29 @@ textarea { resize:vertical; min-height:68px; }
 const G = "https://script.google.com/macros/s/AKfycbxV_KD1fH3TMwDFXUE9kjH5DQW8r1pA4FniA0-bOwQIT8Ew9xEp7gwIct4HEANCttXtdA/exec";
 const AZIONI_PRESET = ["Prodotti spostati","Tecnico chiamato","Impostazioni corrette","Prodotti smaltiti","Porta controllata","Sbrinamento effettuato","In attesa verifica"];
 
+async function autoSyncConfig() {
+  const rows = [];
+
+  config.forEach((c,i)    => rows.push([`device_${i}`, JSON.stringify(c)]));
+  operatori.forEach((o,i) => rows.push([`operatore_${i}`, o]));
+  scheduleSlots.forEach((s,i) => rows.push([`slot_${i}`, JSON.stringify(s)]));
+
+  rows.push(['azienda',      aziendaCfg.azienda      || '']);
+  rows.push(['indirizzo',    aziendaCfg.indirizzo    || '']);
+  rows.push(['responsabile', aziendaCfg.responsabile || '']);
+
+  try {
+    await fetch(G, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ tipo:'config', rows })
+    });
+    console.log("Auto-sync OK");
+  } catch(e) {
+    console.log("Auto-sync offline");
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // STATO (tutto sincronizzato dal cloud all'avvio)
 // ═══════════════════════════════════════════════════════
@@ -481,27 +504,46 @@ async function pullConfig() {
   try {
     const r = await fetch(G + '?tipo=config');
     const rows = await r.json();
-    // Righe: [chiave, valore]
-    // chiavi: device_* , operatore_* , slot_* , azienda, indirizzo, responsabile
-    config=[]; operatori=[]; scheduleSlots=[]; aziendaCfg={};
+
+    // 🔥 FIX: se cloud vuoto NON cancellare dati locali
+    if (!rows || rows.length <= 1) {
+      console.log("Cloud vuoto → uso locale");
+      loadConfigLocal();
+      return;
+    }
+
+    config = [];
+    operatori = [];
+    scheduleSlots = [];
+    aziendaCfg = {};
+
     rows.slice(1).forEach(r => {
       if (!r[0]) return;
       const k = String(r[0]);
-      const v = String(r[1]||'');
+      const v = String(r[1] || '');
+
       if (k.startsWith('device_')) {
         try { config.push(JSON.parse(v)); } catch(e){}
       } else if (k.startsWith('operatore_')) {
         operatori.push(v);
       } else if (k.startsWith('slot_')) {
         try { scheduleSlots.push(JSON.parse(v)); } catch(e){}
-      } else if (k === 'azienda')       { aziendaCfg.azienda = v; }
-        else if (k === 'indirizzo')     { aziendaCfg.indirizzo = v; }
-        else if (k === 'responsabile')  { aziendaCfg.responsabile = v; }
+      } else if (k === 'azienda') {
+        aziendaCfg.azienda = v;
+      } else if (k === 'indirizzo') {
+        aziendaCfg.indirizzo = v;
+      } else if (k === 'responsabile') {
+        aziendaCfg.responsabile = v;
+      }
     });
-    scheduleSlots.sort((a,b)=>a.time.localeCompare(b.time));
-  } catch(e) { loadConfigLocal(); }
-}
 
+    scheduleSlots.sort((a,b)=>a.time.localeCompare(b.time));
+
+  } catch(e) {
+    console.log("Errore → uso locale");
+    loadConfigLocal();
+  }
+}
 function loadConfigLocal() {
   config        = JSON.parse(localStorage.getItem('h_config'))    || [];
   operatori     = JSON.parse(localStorage.getItem('h_operatori')) || [];
@@ -902,6 +944,7 @@ function addSlot() {
   scheduleSlots.push({time:t,label:l||t});
   scheduleSlots.sort((a,b)=>a.time.localeCompare(b.time));
   localStorage.setItem('h_schedule',JSON.stringify(scheduleSlots));
+  autoSyncConfig();
   document.getElementById('new-slot-time').value='';
   document.getElementById('new-slot-label').value='';
   renderScheduleConfig(); checkReminderDot();
@@ -1058,6 +1101,7 @@ function addDevice() {
   if(config.find(c=>c.name===name)){showToast('Nome già usato','error');return;}
   config.push({name,type:document.getElementById('new-type').value,area:document.getElementById('new-area').value});
   localStorage.setItem('h_config',JSON.stringify(config));
+  autoSyncConfig(); // 🔥 QUI
   document.getElementById('new-name').value='';
   renderSetup(); renderDevices();
   showToast(`${name} aggiunto — premi ☁ Sincronizza per condividerlo`,'success');
@@ -1065,6 +1109,7 @@ function addDevice() {
 
 function deleteDevice(i) {
   const n=config[i]?.name; config.splice(i,1); localStorage.setItem('h_config',JSON.stringify(config));
+  autoSyncConfig(); // 🔥 AGGIUNTO QUI
   renderSetup(); renderDevices(); showToast(`${n} rimosso — premi ☁ Sincronizza`,'success');
 }
 
@@ -1083,6 +1128,7 @@ function renderOperatoriSetup() {
 function addOperatore() {
   const v=document.getElementById('new-operatore').value.trim(); if(!v)return;
   if(!operatori.includes(v)){operatori.push(v);localStorage.setItem('h_operatori',JSON.stringify(operatori));}
+  autoSyncConfig();
   document.getElementById('new-operatore').value='';
   renderOperatoriSetup(); renderFirmaScreen();
   showToast(`${v} aggiunto — premi ☁ Sincronizza`,'success');
@@ -1100,6 +1146,7 @@ function saveCfgLocal() {
     responsabile: document.getElementById('cfg-responsabile').value
   };
   localStorage.setItem('h_azienda',JSON.stringify(aziendaCfg));
+  autoSyncConfig();
 }
 
 // ═══════════════════════════════════════════════════════
