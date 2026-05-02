@@ -1604,6 +1604,40 @@ function updateDate() {
 // ═══════════════════════════════════════════════════════
 // START
 // ═══════════════════════════════════════════════════════
+// ─── RESET ───────────────────────────────────────────────
+async function resetRegistrazioni() {
+  if (!confirm('Sei sicuro di voler eliminare TUTTE le registrazioni?\nQuesta operazione è irreversibile.')) return;
+  if (!confirm('ULTIMA CONFERMA: eliminare tutte le registrazioni?')) return;
+  cloudData = []; cloudAzioni = []; cloudFirme = [];
+  localStorage.setItem('h_clouddata', JSON.stringify([]));
+  localStorage.setItem('h_azioni',    JSON.stringify([]));
+  localStorage.setItem('h_firme',     JSON.stringify([]));
+  try {
+    await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'resetTemperature' }) });
+    await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'resetAzioni' }) });
+    await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'resetFirme' }) });
+  } catch(e) {}
+  showToast('Registrazioni eliminate', 'success');
+  buildDash();
+}
+
+async function resetTutto() {
+  if (!confirm('Sei sicuro di voler eliminare TUTTO?\nApparecchi, operatori, registrazioni e configurazione.\nOperazione irreversibile.')) return;
+  if (!confirm('ULTIMA CONFERMA: reset completo?')) return;
+  config = []; operatori = [];
+  scheduleSlots = [{time:"09:00",label:"Apertura"},{time:"15:00",label:"Pomeriggio"},{time:"21:00",label:"Chiusura"}];
+  aziendaCfg = {}; cloudData = []; cloudAzioni = []; cloudFirme = [];
+  localStorage.clear();
+  try {
+    await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'resetTemperature' }) });
+    await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'resetAzioni' }) });
+    await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'resetFirme' }) });
+    await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'config', rows:[] }) });
+  } catch(e) {}
+  renderSetup(); renderDevices(); buildDash();
+  showToast('Reset completo effettuato', 'success');
+}
+
 init();
 </script>
 </body>
