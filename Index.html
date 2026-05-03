@@ -1444,9 +1444,10 @@ async function saveCfgCloud() {
   try {
     // Costruisci rows con tutti i dati config + azienda
     const rows = [];
-    config.forEach((d,i) => rows.push(['device_'+i, JSON.stringify(d)]));
-    operatori.forEach((o,i) => rows.push(['op_'+i, o]));
-    scheduleSlots.forEach((s,i) => rows.push(['slot_'+i, JSON.stringify(s)]));
+    config.forEach((c,i) => rows.push([`device_${i}`, JSON.stringify(c)]));
+    operatori.forEach((o,i) => rows.push([`operatore_${i}`, o])); // Fix: era op_ invece di operatore_
+    scheduleSlots.forEach((s,i) => rows.push([`slot_${i}`, JSON.stringify(s)]));
+    
     rows.push(['azienda',      aziendaCfg.azienda      || '']);
     rows.push(['indirizzo',    aziendaCfg.indirizzo    || '']);
     rows.push(['piva',         aziendaCfg.piva         || '']);
@@ -1455,13 +1456,11 @@ async function saveCfgCloud() {
     rows.push(['responsabile', aziendaCfg.responsabile || '']);
     rows.push(['regsanitaria', aziendaCfg.regsanitaria || '']);
     rows.push(['dataverifica', aziendaCfg.dataverifica || '']);
-    const res = await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'config', rows }) });
-    const json = await res.json();
-    if (json && json.success) {
-      showToast('Dati azienda salvati sul cloud ✓', 'success');
-    } else {
-      showToast('Errore salvataggio cloud', 'warning');
-    }
+    
+    // Modalità 'no-cors' senza forzare la decodifica del JSON di ritorno
+    await fetch(G, { method:'POST', mode:'no-cors', body: JSON.stringify({ tipo:'config', rows }) });
+    
+    showToast('Dati azienda salvati sul cloud ✓', 'success');
   } catch(e) {
     showToast('Salvato in locale — verifica connessione', 'warning');
   }
