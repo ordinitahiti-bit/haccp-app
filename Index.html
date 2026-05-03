@@ -864,24 +864,22 @@ async function pushConfig() {
 // APPLY CONFIG → aggiorna UI con i dati scaricati
 // ═══════════════════════════════════════════════════════
 function applyConfig() {
-  // Campi PDF
-  const a = document.getElementById('cfg-azienda');
-  const i = document.getElementById('cfg-indirizzo');
-  const r = document.getElementById('cfg-responsabile');
-  const piva = document.getElementById('cfg-piva');
-  const tel = document.getElementById('cfg-telefono');
-  const email = document.getElementById('cfg-email');
-  const reg = document.getElementById('cfg-regsanitaria');
-  const dat = document.getElementById('cfg-dataverifica');
-  
-  if(a) a.value = aziendaCfg.azienda      || '';
-  if(i) i.value = aziendaCfg.indirizzo    || '';
-  if(r) r.value = aziendaCfg.responsabile || '';
-  if(piva) piva.value = aziendaCfg.piva   || '';
-  if(tel) tel.value = aziendaCfg.telefono || '';
-  if(email) email.value = aziendaCfg.email || '';
-  if(reg) reg.value = aziendaCfg.regsanitaria || '';
-  if(dat) dat.value = aziendaCfg.dataverifica || '';
+  // Mappa i dati dalla memoria ai campi di testo della pagina
+  const fields = {
+    'cfg-azienda':      aziendaCfg.azienda,
+    'cfg-indirizzo':    aziendaCfg.indirizzo,
+    'cfg-piva':         aziendaCfg.piva,
+    'cfg-telefono':     aziendaCfg.telefono,
+    'cfg-email':        aziendaCfg.email,
+    'cfg-responsabile': aziendaCfg.responsabile,
+    'cfg-regsanitaria': aziendaCfg.regsanitaria,
+    'cfg-dataverifica': aziendaCfg.dataverifica
+  };
+
+  for (let id in fields) {
+    const el = document.getElementById(id);
+    if (el) el.value = fields[id] || '';
+  }
 }
 
 function renderAll() {
@@ -1440,46 +1438,49 @@ function deleteOperatore(i) {
 }
 
 async function saveCfgCloud() {
-  saveCfgLocal();
+  saveCfgLocal(); // Prima legge i dati aggiornati dai campi di testo
+  
   try {
-    // Costruisci rows con tutti i dati config + azienda
     const rows = [];
     config.forEach((c,i) => rows.push([`device_${i}`, JSON.stringify(c)]));
-    operatori.forEach((o,i) => rows.push([`operatore_${i}`, o])); // Fix: era op_ invece di operatore_
+    operatori.forEach((o,i) => rows.push([`operatore_${i}`, o]));
     scheduleSlots.forEach((s,i) => rows.push([`slot_${i}`, JSON.stringify(s)]));
     
+    // Usiamo il trucco dell'apice (') per forzare Google Sheets a scrivere il testo esatto
     rows.push(['azienda',      aziendaCfg.azienda      || '']);
     rows.push(['indirizzo',    aziendaCfg.indirizzo    || '']);
-    rows.push(['piva',         aziendaCfg.piva         || '']);
-    rows.push(['telefono',     aziendaCfg.telefono     || '']);
+    rows.push(['piva',         "'" + (aziendaCfg.piva         || '')]); 
+    rows.push(['telefono',     "'" + (aziendaCfg.telefono     || '')]); 
     rows.push(['email',        aziendaCfg.email        || '']);
     rows.push(['responsabile', aziendaCfg.responsabile || '']);
     rows.push(['regsanitaria', aziendaCfg.regsanitaria || '']);
     rows.push(['dataverifica', aziendaCfg.dataverifica || '']);
     
-    // Modalità 'no-cors' senza forzare la decodifica del JSON di ritorno
-    await fetch(G, { method:'POST', mode:'no-cors', body: JSON.stringify({ tipo:'config', rows }) });
+    await fetch(G, { 
+      method:'POST', 
+      mode:'no-cors', 
+      body: JSON.stringify({ tipo:'config', rows }) 
+    });
     
-    showToast('Dati azienda salvati sul cloud ✓', 'success');
+    showToast('Dati azienda e configurazione salvati!', 'success');
   } catch(e) {
-    showToast('Salvato in locale — verifica connessione', 'warning');
+    showToast('Errore nel salvataggio cloud', 'error');
   }
 }
 
 function saveCfgLocal() {
-  function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-  aziendaCfg = {
-    azienda:      val('cfg-azienda'),
-    indirizzo:    val('cfg-indirizzo'),
-    piva:         val('cfg-piva'),
-    telefono:     val('cfg-telefono'),
-    email:        val('cfg-email'),
-    responsabile: val('cfg-responsabile'),
-    regsanitaria: val('cfg-regsanitaria'),
-    dataverifica: val('cfg-dataverifica')
-  };
+  // Legge TUTTI i campi dalla pagina
+  aziendaCfg.azienda      = document.getElementById('cfg-azienda').value;
+  aziendaCfg.indirizzo    = document.getElementById('cfg-indirizzo').value;
+  aziendaCfg.piva         = document.getElementById('cfg-piva').value;
+  aziendaCfg.telefono     = document.getElementById('cfg-telefono').value;
+  aziendaCfg.email        = document.getElementById('cfg-email').value;
+  aziendaCfg.responsabile = document.getElementById('cfg-responsabile').value;
+  aziendaCfg.regsanitaria = document.getElementById('cfg-regsanitaria').value;
+  aziendaCfg.dataverifica = document.getElementById('cfg-dataverifica').value;
+  
   localStorage.setItem('h_azienda', JSON.stringify(aziendaCfg));
-  autoSyncConfig();
+  // showToast('Configurazione salvata in locale', 'success'); // Opzionale se chiamata da saveCfgCloud
 }
 
 // ═══════════════════════════════════════════════════════
