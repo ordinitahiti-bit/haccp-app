@@ -222,7 +222,7 @@ textarea { resize:vertical; min-height:68px; }
     </div>
     <div id="login-pass-section" style="display:none;">
       <label>Password per <span id="login-user-name" style="color:#7dd3fc;"></span></label>
-      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="margin-top:6px;">
+      <input type="password" id="login-pass" placeholder="••••••••"  style="margin-top:6px;">
     </div>
     <div class="login-err" id="login-err"></div>
     <button class="login-btn" id="login-btn" onclick="doLogin()" style="display:none;">Accedi →</button>
@@ -1418,6 +1418,34 @@ function addOperatore() {
 function deleteOperatore(i) {
   operatori.splice(i,1); localStorage.setItem('h_operatori',JSON.stringify(operatori));
   renderOperatoriSetup(); renderFirmaScreen();
+}
+
+async function saveCfgCloud() {
+  saveCfgLocal();
+  try {
+    // Costruisci rows con tutti i dati config + azienda
+    const rows = [];
+    config.forEach((d,i) => rows.push(['device_'+i, JSON.stringify(d)]));
+    operatori.forEach((o,i) => rows.push(['op_'+i, o]));
+    scheduleSlots.forEach((s,i) => rows.push(['slot_'+i, JSON.stringify(s)]));
+    rows.push(['azienda',      aziendaCfg.azienda      || '']);
+    rows.push(['indirizzo',    aziendaCfg.indirizzo    || '']);
+    rows.push(['piva',         aziendaCfg.piva         || '']);
+    rows.push(['telefono',     aziendaCfg.telefono     || '']);
+    rows.push(['email',        aziendaCfg.email        || '']);
+    rows.push(['responsabile', aziendaCfg.responsabile || '']);
+    rows.push(['regsanitaria', aziendaCfg.regsanitaria || '']);
+    rows.push(['dataverifica', aziendaCfg.dataverifica || '']);
+    const res = await fetch(G, { method:'POST', body: JSON.stringify({ tipo:'config', rows }) });
+    const json = await res.json();
+    if (json && json.success) {
+      showToast('Dati azienda salvati sul cloud ✓', 'success');
+    } else {
+      showToast('Errore salvataggio cloud', 'warning');
+    }
+  } catch(e) {
+    showToast('Salvato in locale — verifica connessione', 'warning');
+  }
 }
 
 function saveCfgLocal() {
