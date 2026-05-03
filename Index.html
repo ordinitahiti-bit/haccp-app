@@ -841,9 +841,17 @@ async function pushConfig() {
   config.forEach((c,i)    => rows.push([`device_${i}`,     JSON.stringify(c)]));
   operatori.forEach((o,i) => rows.push([`operatore_${i}`,  o]));
   scheduleSlots.forEach((s,i) => rows.push([`slot_${i}`,   JSON.stringify(s)]));
+  
+  // Aggiunti tutti i campi azienda mancanti
   rows.push(['azienda',      aziendaCfg.azienda      || '']);
   rows.push(['indirizzo',    aziendaCfg.indirizzo    || '']);
+  rows.push(['piva',         aziendaCfg.piva         || '']);
+  rows.push(['telefono',     aziendaCfg.telefono     || '']);
+  rows.push(['email',        aziendaCfg.email        || '']);
   rows.push(['responsabile', aziendaCfg.responsabile || '']);
+  rows.push(['regsanitaria', aziendaCfg.regsanitaria || '']);
+  rows.push(['dataverifica', aziendaCfg.dataverifica || '']);
+  
   try {
     await fetch(G, { method:'POST', mode:'no-cors', body: JSON.stringify({ tipo:'config', rows }) });
     showToast('Configurazione sincronizzata su tutti i device','success');
@@ -860,9 +868,20 @@ function applyConfig() {
   const a = document.getElementById('cfg-azienda');
   const i = document.getElementById('cfg-indirizzo');
   const r = document.getElementById('cfg-responsabile');
+  const piva = document.getElementById('cfg-piva');
+  const tel = document.getElementById('cfg-telefono');
+  const email = document.getElementById('cfg-email');
+  const reg = document.getElementById('cfg-regsanitaria');
+  const dat = document.getElementById('cfg-dataverifica');
+  
   if(a) a.value = aziendaCfg.azienda      || '';
   if(i) i.value = aziendaCfg.indirizzo    || '';
   if(r) r.value = aziendaCfg.responsabile || '';
+  if(piva) piva.value = aziendaCfg.piva   || '';
+  if(tel) tel.value = aziendaCfg.telefono || '';
+  if(email) email.value = aziendaCfg.email || '';
+  if(reg) reg.value = aziendaCfg.regsanitaria || '';
+  if(dat) dat.value = aziendaCfg.dataverifica || '';
 }
 
 function renderAll() {
