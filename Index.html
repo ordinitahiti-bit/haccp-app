@@ -187,6 +187,15 @@ textarea { resize:vertical; min-height:68px; }
 /* ── OPERATORE BADGE ── */
 #operatore-badge { font-size:11px; opacity:.75; cursor:pointer; text-decoration:underline; }
 
+
+/* ── BANNER STAMPA SETTIMANALE ── */
+#stampa-banner { display:none; position:fixed; bottom:70px; left:50%; transform:translateX(-50%); width:calc(100% - 28px); max-width:500px; background:#fff; border:2px solid #f59e0b; border-radius:12px; padding:14px 16px; box-shadow:0 4px 20px rgba(0,0,0,.15); z-index:500; }
+#stampa-banner .sb-title { font-size:13px; font-weight:800; color:#92400e; margin-bottom:4px; }
+#stampa-banner .sb-text  { font-size:12px; color:#78350f; margin-bottom:10px; line-height:1.5; }
+#stampa-banner .sb-btns  { display:flex; gap:8px; }
+#stampa-banner .sb-print { flex:2; padding:10px; background:#f59e0b; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; }
+#stampa-banner .sb-later { flex:1; padding:10px; background:var(--border); color:var(--text); border:none; border-radius:8px; font-weight:600; font-size:12px; font-family:inherit; cursor:pointer; }
+
 /* ── MISC ── */
 .offline-bar { background:var(--amber-light); border-bottom:1px solid #f5c185; padding:7px 14px; font-size:11px; font-weight:600; color:var(--amber); display:none; text-align:center; }
 .offline-bar.on { display:block; }
@@ -354,7 +363,8 @@ textarea { resize:vertical; min-height:68px; }
     <button class="btn btn-outline" id="btn-only-err" onclick="toggleErrFilter()" style="flex:1;padding:9px;font-size:12px;border-width:1.5px;">Solo anomalie</button>
     <button class="btn btn-success" onclick="exportExcel()" style="flex:1;padding:9px;font-size:12px;">📊 Excel</button>
   </div>
-  <button class="btn btn-pdf" onclick="exportPDF()" style="margin-bottom:11px;padding:11px;">📄 Genera PDF ufficiale HACCP</button>
+  <button class="btn btn-pdf" onclick="exportPDF()" style="margin-bottom:8px;padding:11px;">📄 Genera PDF ufficiale HACCP</button>
+  <button class="btn" onclick="stampaDiretto()" style="margin-bottom:11px;padding:11px;background:#f59e0b;color:#fff;border:none;">🖨️ Stampa diretta registro settimanale</button>
   <div class="card" style="padding:0;overflow:hidden;">
     <div style="max-height:400px;overflow-y:auto;">
       <table class="hist-table">
@@ -533,7 +543,7 @@ async function init() {
   // Mostra login (salta se sessione valida)
   const hasSession = await checkSession();
   if (!hasSession) showLoginScreen();
-  else renderAll();
+  else { renderAll(); setTimeout(checkStampaBanner, 2000); }
 
   initFirmaCanvas();
   checkReminderDot();
@@ -1502,92 +1512,208 @@ function exportExcel() {
 // EXPORT PDF
 // ═══════════════════════════════════════════════════════
 function exportPDF() {
-  const data=getFiltered(); if(!data.length){showToast('Nessun dato','warning');return;}
-  const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const mName=document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
-  const aName=document.getElementById('filter-area').options[document.getElementById('filter-area').selectedIndex].text;
-  const W=210,M=14;
+  const data = getFiltered();
+  if (!data.length) { showToast('Nessun dato per il periodo selezionato', 'warning'); return; }
 
-  // Header
-  doc.setFillColor(26,58,92); doc.rect(0,0,W,30,'F');
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const mSel = document.getElementById('filter-month');
+  const aSel = document.getElementById('filter-area');
+  const mName = mSel.options[mSel.selectedIndex].text;
+  const aName = aSel.options[aSel.selectedIndex].text;
+  const W = 210, M = 14;
+  const oggi = new Date().toLocaleString('it-IT');
+
+  // ── PAGINA 1: COPERTINA ──────────────────────────────────
+  // Banda superiore navy
+  doc.setFillColor(26,58,92); doc.rect(0,0,W,50,'F');
+
+  // Titolo documento
   doc.setTextColor(255,255,255);
-  doc.setFontSize(13); doc.setFont('helvetica','bold');
-  doc.text('REGISTRO HACCP — CONTROLLO TEMPERATURE',M,12);
-  doc.setFontSize(8.5); doc.setFont('helvetica','normal');
-  doc.text(`${aziendaCfg.azienda||'[Nome azienda]'}  ·  ${aziendaCfg.indirizzo||'[Indirizzo]'}`,M,19);
-  doc.text(`Responsabile: ${aziendaCfg.responsabile||'[Nome]'}  ·  Periodo: ${mName}  ·  Zona: ${aName}`,M,25);
-  doc.setTextColor(80,80,80); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
-  doc.text(`Generato il ${new Date().toLocaleString('it-IT')}  ·  Rif. Reg. CE 852/2004`,M,36);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('SISTEMA DI AUTOCONTROLLO ALIMENTARE', M, 14);
+  doc.text('Reg. CE 852/2004 — Allegato II', M, 19);
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text('REGISTRO CONTROLLO TEMPERATURE', M, 31);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('HACCP Pro Cloud — Documento Ufficiale', M, 39);
+  doc.text('Generato il: ' + oggi, W-M, 39, {align:'right'});
 
-  // KPI
-  const errs=data.filter(r=>r[5]==='ERR').length;
-  const fixed=data.filter(r=>!!corrective[`${r[2]}_${r[0]}_${r[1]}`]).length;
-  [{label:'Totale',val:data.length,c:[26,58,92]},{label:'Conformi',val:data.length-errs,c:[26,122,74]},
-   {label:'Non conformi',val:errs,c:[192,57,43]},{label:'Con azione',val:fixed,c:[133,79,11]}
-  ].forEach((b,i)=>{
-    const x=M+i*46;
-    doc.setFillColor(...b.c); doc.roundedRect(x,40,43,16,2,2,'F');
-    doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont('helvetica','bold');
-    doc.text(String(b.val),x+21.5,49.5,{align:'center'});
-    doc.setFontSize(6); doc.setFont('helvetica','normal');
-    doc.text(b.label,x+21.5,53.5,{align:'center'});
+  // Dati azienda
+  let y = 58;
+  doc.setTextColor(26,58,92);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('DATI AZIENDA', M, y); y += 6;
+  doc.setDrawColor(26,58,92); doc.setLineWidth(0.5); doc.line(M, y, W-M, y); y += 5;
+
+  const campiAzienda = [
+    ['Ragione sociale', aziendaCfg.azienda || '________________'],
+    ['Indirizzo', aziendaCfg.indirizzo || '________________'],
+    ['P.IVA / C.F.', aziendaCfg.piva || '________________'],
+    ['Telefono', aziendaCfg.telefono || '________________'],
+    ['Email', aziendaCfg.email || '________________'],
+    ['Responsabile HACCP', aziendaCfg.responsabile || '________________'],
+    ['N. Registrazione Sanitaria', aziendaCfg.regsanitaria || '________________'],
+    ['Data ultima verifica HACCP', aziendaCfg.dataverifica || '________________'],
+  ];
+  doc.setFontSize(9);
+  campiAzienda.forEach(function(campo) {
+    doc.setFont('helvetica','bold'); doc.setTextColor(60,60,60);
+    doc.text(campo[0] + ':', M, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30);
+    doc.text(campo[1], 75, y);
+    y += 7;
   });
 
-  // Tabella
+  // Dati periodo
+  y += 4;
+  doc.setTextColor(26,58,92);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('DATI DEL REGISTRO', M, y); y += 6;
+  doc.setDrawColor(26,58,92); doc.line(M, y, W-M, y); y += 5;
+
+  const errs = data.filter(r => r[5]==='ERR').length;
+  const ok   = data.length - errs;
+  const campiPeriodo = [
+    ['Periodo di riferimento', mName],
+    ['Zona / Area', aName],
+    ['Totale rilevazioni', String(data.length)],
+    ['Rilevazioni conformi', String(ok)],
+    ['Rilevazioni non conformi', String(errs)],
+    ['Soglia frigo', '+4°C (Reg. CE 852/2004)'],
+    ['Soglia congelatore', '-18°C (Reg. CE 852/2004)'],
+  ];
+  doc.setFontSize(9);
+  campiPeriodo.forEach(function(campo) {
+    doc.setFont('helvetica','bold'); doc.setTextColor(60,60,60);
+    doc.text(campo[0] + ':', M, y);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(campo[0].includes('non conformi') && parseInt(campo[1])>0 ? 192 : 30, campo[0].includes('non conformi') && parseInt(campo[1])>0 ? 57 : 30, 30);
+    doc.text(campo[1], 75, y);
+    y += 7;
+  });
+
+  // Spazio firma copertina
+  y += 8;
+  doc.setTextColor(26,58,92);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('DICHIARAZIONE DEL RESPONSABILE', M, y); y += 6;
+  doc.setDrawColor(26,58,92); doc.line(M, y, W-M, y); y += 6;
+  doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50);
+  doc.text('Il sottoscritto, in qualità di Responsabile HACCP, dichiara che le rilevazioni contenute nel presente', M, y); y+=5;
+  doc.text('registro sono state effettuate secondo le procedure del piano di autocontrollo aziendale.', M, y); y+=10;
+  doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(60,60,60);
+  doc.text('Data: ___________________', M, y);
+  doc.text('Firma: ___________________________', 100, y); y+=14;
+  doc.setDrawColor(150,150,150); doc.setLineWidth(0.3);
+  doc.line(M, y, 70, y);
+  doc.line(100, y, 190, y);
+
+  // ── PAGINA 2+: TABELLA RILEVAZIONI ──────────────────────
+  doc.addPage();
+
+  // Header pagina 2
+  doc.setFillColor(26,58,92); doc.rect(0,0,W,18,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('REGISTRO TEMPERATURE — ' + mName.toUpperCase() + ' — ' + aName.toUpperCase(), M, 8);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text((aziendaCfg.azienda||'') + '  ·  P.IVA: ' + (aziendaCfg.piva||'N/D'), M, 14);
+  doc.text('Resp.: ' + (aziendaCfg.responsabile||'N/D'), W-M, 14, {align:'right'});
+
+  // KPI boxes
+  [{label:'Totale', val:data.length, c:[26,58,92]},
+   {label:'Conformi', val:ok, c:[26,122,74]},
+   {label:'Non conformi', val:errs, c:[192,57,43]},
+   {label:'Con azione', val:data.filter(r=>!!corrective[r[2]+'_'+r[0]+'_'+r[1]]).length, c:[133,79,11]}
+  ].forEach(function(b,i) {
+    const x = M + i*46;
+    doc.setFillColor(...b.c); doc.roundedRect(x,22,43,14,2,2,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(String(b.val), x+21.5, 31, {align:'center'});
+    doc.setFontSize(6); doc.setFont('helvetica','normal');
+    doc.text(b.label, x+21.5, 34, {align:'center'});
+  });
+
+  // Tabella rilevazioni
   doc.autoTable({
-    startY:62,
-    head:[['Data','Ora','Apparecchio','Zona','Temp.','Stato','Azione correttiva','Resp.']],
-    body:data.map(r=>{
-      const fix=corrective[`${r[2]}_${r[0]}_${r[1]}`];
-      return [r[0]||'',r[1]||'',r[2]||'',r[6]||'',(r[4]||'')+'°C',r[5]||'',
-        fix?(fix.azioni.join(', ')+(fix.note?' — '+fix.note:'')).substring(0,50):'—',
-        fix?fix.responsabile:'—'];
+    startY: 40,
+    head: [['Data','Ora','Apparecchio','Zona','Tipo','Temp.','Stato','Operatore','Azione correttiva']],
+    body: data.map(function(r) {
+      const fix = corrective[r[2]+'_'+r[0]+'_'+r[1]];
+      return [
+        r[0]||'', r[1]||'', r[2]||'', r[6]||'', r[3]||'',
+        (r[4]||'')+'°C', r[5]||'', r[7]||'N/D',
+        fix ? (fix.azioni.join(', ')+(fix.note?' — '+fix.note:'')).substring(0,40) : '—'
+      ];
     }),
-    styles:{fontSize:7,cellPadding:2.5,lineColor:[220,227,234],lineWidth:0.3},
-    headStyles:{fillColor:[26,58,92],textColor:255,fontStyle:'bold',fontSize:7},
-    alternateRowStyles:{fillColor:[245,248,250]},
-    columnStyles:{0:{cellWidth:18},1:{cellWidth:12},2:{cellWidth:30},3:{cellWidth:20},4:{cellWidth:14,halign:'center'},5:{cellWidth:14,halign:'center'},6:{cellWidth:52},7:{cellWidth:22}},
-    didParseCell:(d)=>{
-      if(d.section==='body'&&d.column.index===5){
-        d.cell.styles.textColor=d.cell.raw==='ERR'?[192,57,43]:[26,122,74];
-        d.cell.styles.fontStyle='bold';
+    styles: {fontSize:6.5, cellPadding:2, lineColor:[220,227,234], lineWidth:0.3},
+    headStyles: {fillColor:[26,58,92], textColor:255, fontStyle:'bold', fontSize:7},
+    alternateRowStyles: {fillColor:[245,248,250]},
+    columnStyles: {
+      0:{cellWidth:17}, 1:{cellWidth:11}, 2:{cellWidth:28}, 3:{cellWidth:18},
+      4:{cellWidth:13}, 5:{cellWidth:13,halign:'center'}, 6:{cellWidth:14,halign:'center'},
+      7:{cellWidth:22}, 8:{cellWidth:46}
+    },
+    didParseCell: function(d) {
+      if (d.section==='body' && d.column.index===6) {
+        d.cell.styles.textColor = d.cell.raw==='ERR' ? [192,57,43] : [26,122,74];
+        d.cell.styles.fontStyle = 'bold';
       }
     }
   });
 
-  // Firme
-  let y=doc.lastAutoTable.finalY+10;
-  if(y>245){doc.addPage();y=20;}
-  doc.setFillColor(26,58,92); doc.rect(M,y,W-M*2,7,'F');
+  // ── SEZIONE FIRME ────────────────────────────────────────
+  let yf = doc.lastAutoTable.finalY + 10;
+  if (yf > 245) { doc.addPage(); yf = 20; }
+
+  doc.setFillColor(26,58,92); doc.rect(M,yf,W-M*2,7,'F');
   doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
-  doc.text('FIRME RESPONSABILI',M+2,y+5); y+=12;
-  const allFirme=cloudFirme.filter(r=>Array.isArray(r)&&r[2]);
-  if(!allFirme.length){
+  doc.text('FIRME OPERATORI', M+2, yf+5); yf += 12;
+
+  const allFirme = Array.isArray(cloudFirme) ? cloudFirme.filter(r=>Array.isArray(r)&&r[2]) : [];
+  if (!allFirme.length) {
     doc.setTextColor(120,120,120); doc.setFontSize(8); doc.setFont('helvetica','italic');
-    doc.text('Nessuna firma digitale registrata.',M,y+5); y+=14;
+    doc.text('Nessuna firma digitale registrata per questo periodo.', M, yf+5); yf += 14;
   } else {
-    allFirme.forEach(f=>{
-      if(y>262){doc.addPage();y=20;}
+    allFirme.forEach(function(f) {
+      if (yf > 262) { doc.addPage(); yf = 20; }
       doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
-      doc.text(f[2],M,y+5);
+      doc.text(f[2], M, yf+5);
       doc.setFont('helvetica','normal'); doc.setTextColor(110,110,110); doc.setFontSize(7.5);
-      doc.text(`${f[0]} ${f[1]||''}`,M,y+10);
-      if(f[3]){try{doc.addImage(f[3],'PNG',W-M-58,y,58,18);}catch(e){}}
-      doc.setDrawColor(210,210,210); doc.line(M,y+24,W-M,y+24); y+=28;
+      doc.text(f[0]+' '+( f[1]||''), M, yf+10);
+      if (f[3]) { try { doc.addImage(f[3],'PNG',W-M-58,yf,58,18); } catch(e){} }
+      doc.setDrawColor(210,210,210); doc.line(M,yf+24,W-M,yf+24); yf += 28;
     });
   }
 
-  // Footer
-  const pages=doc.internal.getNumberOfPages();
-  for(let p=1;p<=pages;p++){
+  // Spazio firma responsabile in fondo
+  if (yf > 255) { doc.addPage(); yf = 20; }
+  yf += 5;
+  doc.setDrawColor(26,58,92); doc.setLineWidth(0.5); doc.line(M,yf,W-M,yf); yf+=6;
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(26,58,92);
+  doc.text('VALIDAZIONE RESPONSABILE HACCP', M, yf); yf+=7;
+  doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50); doc.setFontSize(8);
+  doc.text('Il Responsabile HACCP attesta la correttezza e completezza del presente registro.', M, yf); yf+=8;
+  doc.text('Data: ___________________', M, yf);
+  doc.text('Timbro e Firma: ___________________________', 100, yf); yf+=10;
+  doc.setDrawColor(150,150,150); doc.setLineWidth(0.3);
+  doc.line(M,yf,70,yf); doc.line(100,yf,190,yf);
+
+  // ── FOOTER TUTTE LE PAGINE ───────────────────────────────
+  const pages = doc.internal.getNumberOfPages();
+  for (let p=1; p<=pages; p++) {
     doc.setPage(p);
     doc.setFillColor(240,244,248); doc.rect(0,286,210,11,'F');
     doc.setTextColor(130,130,130); doc.setFontSize(7); doc.setFont('helvetica','normal');
-    doc.text(`HACCP Pro Cloud · ${aziendaCfg.azienda||''} · Reg. CE 852/2004`,M,291.5);
-    doc.text(`Pag. ${p}/${pages}`,W-M,291.5,{align:'right'});
+    doc.text('HACCP Pro Cloud  ·  ' + (aziendaCfg.azienda||'') + '  ·  P.IVA: ' + (aziendaCfg.piva||'N/D') + '  ·  Reg. CE 852/2004', M, 291.5);
+    doc.text('Pag. '+p+'/'+pages, W-M, 291.5, {align:'right'});
   }
-  doc.save(`HACCP_${mName.replace(/\s/g,'_')}.pdf`);
-  showToast('PDF generato','success');
+
+  const nomefile = 'HACCP_' + (aziendaCfg.azienda||'registro').replace(/[^a-zA-Z0-9]/g,'_') + '_' + mName.replace(/\s/g,'_') + '.pdf';
+  doc.save(nomefile);
+  showToast('PDF ufficiale generato', 'success');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1648,6 +1774,46 @@ async function savePassword() {
   document.getElementById('pwd-confirm').value = '';
   showToast('Password salvata per ' + user, 'success');
   renderPasswordMgmt();
+}
+
+// ─── STAMPA SETTIMANALE ──────────────────────────────────
+function checkStampaBanner() {
+  const ultima = parseInt(localStorage.getItem('h_ultima_stampa') || '0');
+  const ora    = Date.now();
+  const sette  = 7 * 24 * 3600 * 1000;
+  const banner = document.getElementById('stampa-banner');
+  if (!banner) return;
+  if (ora - ultima > sette) {
+    banner.style.display = 'block';
+  }
+}
+
+function posticipaBanner() {
+  localStorage.setItem('h_ultima_stampa', String(Date.now() - 6 * 24 * 3600 * 1000)); // ricorda domani
+  document.getElementById('stampa-banner').style.display = 'none';
+}
+
+function stampaDiretto() {
+  // Imposta filtro sull'ultima settimana e genera PDF
+  document.getElementById('stampa-banner').style.display = 'none';
+  localStorage.setItem('h_ultima_stampa', String(Date.now()));
+
+  // Seleziona il mese corrente
+  const now = new Date();
+  const mese = String(now.getMonth()+1).padStart(2,'0');
+  const selMese = document.getElementById('filter-month');
+  if (selMese) selMese.value = mese;
+  const selArea = document.getElementById('filter-area');
+  if (selArea) selArea.value = 'ALL';
+
+  // Vai al report e genera PDF
+  const tabReport = document.querySelector('[onclick*="report"]') || document.querySelector('[onclick*="history"]');
+  if (tabReport) tabReport.click();
+
+  setTimeout(function() {
+    exportPDF();
+    showToast('Ricordati di firmare il documento stampato!', 'success');
+  }, 300);
 }
 
 async function resetRegistrazioni() {
