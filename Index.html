@@ -488,13 +488,12 @@ async function autoSyncConfig() {
 
   rows.push(['azienda',       aziendaCfg.azienda       || '']);
   rows.push(['indirizzo',     aziendaCfg.indirizzo     || '']);
-  rows.push(['piva',          aziendaCfg.piva          || '']);
-  rows.push(['telefono',     aziendaCfg.telefono     || '']);
-  rows.push(['email',        aziendaCfg.email         || '']);
+  rows.push(['piva',          "'" + (aziendaCfg.piva   || '')]); // Forza stringa per Sheets
+  rows.push(['telefono',      "'" + (aziendaCfg.telefono || '')]); // Forza stringa per Sheets
+  rows.push(['email',         aziendaCfg.email         || '']);
   rows.push(['responsabile',  aziendaCfg.responsabile  || '']);
   rows.push(['regsanitaria',  aziendaCfg.regsanitaria  || '']);
   rows.push(['dataverifica',  aziendaCfg.dataverifica  || '']);
-
   try {
     await fetch(G, {
       method: 'POST',
@@ -737,16 +736,17 @@ async function pullConfig() {
         operatori.push(v);
       } else if (k.startsWith('slot_')) {
         try { scheduleSlots.push(JSON.parse(v)); } catch(e){}
-	  } else if (k === 'telefono') {
-	  }
+      } else if (k === 'azienda') {
+        aziendaCfg.azienda = v;
       } else if (k === 'indirizzo') {
         aziendaCfg.indirizzo = v;
       } else if (k === 'piva') {
-        aziendaCfg.piva = v;
+        aziendaCfg.piva = v.replace(/^'/, ''); // Rimuove l'apice salvato su Sheets
       } else if (k === 'telefono') {
-        aziendaCfg.telefono = v;
+        aziendaCfg.telefono = v.replace(/^'/, ''); // Rimuove l'apice salvato su Sheets
       } else if (k === 'email') {
-        aziendaCfg.email = v;
+        aziendaCfg.email = v.
+		replace(/^'/, '');
       } else if (k === 'responsabile') {
         aziendaCfg.responsabile = v;
       } else if (k === 'regsanitaria') {
@@ -763,6 +763,7 @@ async function pullConfig() {
     loadConfigLocal();
   }
 }
+		
 function loadConfigLocal() {
   config        = JSON.parse(localStorage.getItem('h_config'))    || [];
   operatori     = JSON.parse(localStorage.getItem('h_operatori')) || [];
